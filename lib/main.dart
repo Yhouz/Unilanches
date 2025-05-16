@@ -17,7 +17,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       home: LoginPage(),
       theme: ThemeData(
-        print('tetse'),
         primarySwatch: Colors.lightBlue,
         brightness: Brightness.light,
         textTheme: TextTheme(
