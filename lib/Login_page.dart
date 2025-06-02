@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:unilanches/cliente/home_pageClient.dart';
 import 'package:unilanches/funcionario/home_pageFuncionairio.dart';
+import 'package:unilanches/register_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -83,7 +84,7 @@ class _LoginPageState extends State<LoginPage> {
                 SizedBox(
                   width: 150,
                   height: 150,
-                  child: Image.asset('assets/images/image.png'),
+                  child: Image.asset('assets/images/logo.png'),
                 ),
                 SizedBox(height: 100),
                 Text(
@@ -166,20 +167,52 @@ class _LoginPageState extends State<LoginPage> {
                   },
                 ),
                 SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    loginUser();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.black,
-                    backgroundColor: Colors.blue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                        50,
-                      ), // Borda arredondada
+
+                Row(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        loginUser();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.black,
+                        backgroundColor: Colors.blue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            50,
+                          ), // Borda arredondada
+                        ),
+                      ),
+                      child: const Text(
+                        'Entrar',
+                        style: TextStyle(fontSize: 20),
+                      ),
                     ),
-                  ),
-                  child: const Text('Entrar', style: TextStyle(fontSize: 20)),
+                    SizedBox(width: 20), // Espaçamento entre os botões
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => RegisterPage(),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.black,
+                        backgroundColor: Colors.red,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            50,
+                          ), // Borda arredondada
+                        ),
+                      ),
+                      child: Text(
+                        'Cadastrar',
+                        style: TextStyle(fontSize: 20),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

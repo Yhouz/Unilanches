@@ -12,6 +12,7 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.2.2
+  http: ^1.4.0
 
 dev_dependencies:
   flutter_test:
@@ -23,6 +24,6 @@ flutter:
 
   # Correção na seção assets
   assets:
-    - assets/images/LOGO.jpeg
-    - assets/images/image.png
+
     - assets/images/image_fundo.png
+    - assets/images/logo.png
