@@ -19,11 +19,8 @@ Future<bool> verificarLogin(
   );
 
   if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    print('Resposta da API: $data');
     return true;
   } else {
-    print('Erro no login: ${response.body}');
     return false;
   }
 }

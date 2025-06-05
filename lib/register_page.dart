@@ -16,21 +16,24 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController cpf = TextEditingController();
   final TextEditingController telefone = TextEditingController();
   final TextEditingController senha = TextEditingController();
+
   final List<Funcao> listFuncao = [
     Funcao(nome: 'Cliente'),
     Funcao(nome: 'Funcionario'),
   ];
+  final List<Funcao> selectedFuncao = [];
+
   final FocusNode focoNome = FocusNode();
   final FocusNode focoEmail = FocusNode();
   final FocusNode focoCpf = FocusNode();
   final FocusNode focoTelefone = FocusNode();
   final FocusNode focoSenha = FocusNode();
-  final List<Funcao> selectedFuncao = [];
-  final api = RegisterApi();
 
+  final api = RegisterApi();
   bool _isLoading = false;
 
-  void registerUser(BuildContext context) async {
+  /// Função para registrar o usuário
+  Future<bool> registerUser(BuildContext context) async {
     if (nome.text.isEmpty ||
         email.text.isEmpty ||
         cpf.text.isEmpty ||
@@ -39,7 +42,7 @@ class _RegisterPageState extends State<RegisterPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Preencha todos os campos!')),
       );
-      return;
+      return false;
     }
 
     setState(() {
@@ -52,29 +55,40 @@ class _RegisterPageState extends State<RegisterPage> {
       cpf: cpf.text,
       telefone: telefone.text,
       senha: senha.text,
-      tipoUsuario: 'cliente',
+      tipoUsuario: 'Cliente',
     );
 
     try {
       final response = await api.createUser(user);
 
-      if (!context.mounted) return;
+      if (!context.mounted) return false;
+
+      if (response.statusCode == 400) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Use um e-mail institucional (@unifucamp.edu.br)'),
+          ),
+        );
+        return false;
+      }
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Usuário registrado com sucesso!')),
         );
-        Navigator.pop(context);
+        return true;
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erro ao registrar: ${response.body}')),
         );
+        return false;
       }
     } catch (e) {
-      if (!context.mounted) return;
+      if (!context.mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro inesperado: $e')),
       );
+      return false;
     } finally {
       setState(() {
         _isLoading = false;
@@ -98,6 +112,7 @@ class _RegisterPageState extends State<RegisterPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // Campo Nome
                   TextFormField(
                     decoration: const InputDecoration(
                       labelText: 'Nome',
@@ -111,6 +126,8 @@ class _RegisterPageState extends State<RegisterPage> {
                             FocusScope.of(context).requestFocus(focoEmail),
                   ),
                   const SizedBox(height: 20),
+
+                  // Campo Email
                   TextFormField(
                     decoration: const InputDecoration(
                       labelText: 'Email',
@@ -120,11 +137,12 @@ class _RegisterPageState extends State<RegisterPage> {
                     controller: email,
                     focusNode: focoEmail,
                     keyboardType: TextInputType.emailAddress,
-
                     onFieldSubmitted:
                         (value) => FocusScope.of(context).requestFocus(focoCpf),
                   ),
                   const SizedBox(height: 20),
+
+                  // Campo CPF
                   TextFormField(
                     decoration: const InputDecoration(
                       labelText: 'CPF',
@@ -134,12 +152,13 @@ class _RegisterPageState extends State<RegisterPage> {
                     controller: cpf,
                     focusNode: focoCpf,
                     keyboardType: TextInputType.number,
-
                     onFieldSubmitted:
                         (value) =>
                             FocusScope.of(context).requestFocus(focoTelefone),
                   ),
                   const SizedBox(height: 20),
+
+                  // Campo Telefone
                   TextFormField(
                     decoration: const InputDecoration(
                       labelText: 'Telefone',
@@ -154,6 +173,8 @@ class _RegisterPageState extends State<RegisterPage> {
                             FocusScope.of(context).requestFocus(focoSenha),
                   ),
                   const SizedBox(height: 20),
+
+                  // Campo Senha
                   TextFormField(
                     decoration: const InputDecoration(
                       labelText: 'Senha',
@@ -165,52 +186,26 @@ class _RegisterPageState extends State<RegisterPage> {
                     focusNode: focoSenha,
                     keyboardType: TextInputType.visiblePassword,
                     onFieldSubmitted:
-                        (value) => FocusScope.of(context).requestFocus(
-                          selectedFuncao.isEmpty ? focoNome : null,
-                        ),
+                        (value) => FocusScope.of(context).unfocus(),
                   ),
                   const SizedBox(height: 30),
-                  DropdownButton(
-                    isExpanded: true,
-                    icon: const Icon(Icons.arrow_drop_down),
-                    items:
-                        listFuncao.map((funcao) {
-                          return DropdownMenuItem(
-                            value: funcao.nome,
-                            child: Text(funcao.nome),
-                          );
-                        }).toList(),
-                    value:
-                        selectedFuncao.isNotEmpty
-                            ? selectedFuncao.first.nome
-                            : null,
-                    hint: const Text(
-                      'Selecione uma função',
-                      style: TextStyle(fontSize: 20, color: Colors.red),
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedFuncao.clear();
-                        if (value != null) {
-                          selectedFuncao.add(
-                            Funcao(nome: value.toString()),
-                          );
-                        }
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 20),
+
+                  // Dropdown Função
+
+                  // Botão Registrar
                   _isLoading
                       ? const CircularProgressIndicator()
                       : ElevatedButton(
-                        onPressed: () {
-                          registerUser(context);
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginPage(),
-                            ),
-                          );
+                        onPressed: () async {
+                          bool sucesso = await registerUser(context);
+                          if (sucesso) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginPage(),
+                              ),
+                            );
+                          }
                         },
                         child: const Text('Registrar'),
                       ),

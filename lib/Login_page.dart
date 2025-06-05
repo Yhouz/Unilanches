@@ -93,7 +93,9 @@ class _LoginPageState extends State<LoginPage> {
 
       if (sucesso) {
         log('Login bem-sucedido');
-        if (funcaoUsuario == 'Cliente') {
+        if (funcaoUsuario == 'Cliente' &&
+            nomeUsuario == nome.text &&
+            senhaUsuario == senha.text) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -101,7 +103,9 @@ class _LoginPageState extends State<LoginPage> {
                   (context) => HomePageclient(nome: nomeUsuario, saldo: 0.00),
             ),
           );
-        } else if (funcaoUsuario == 'Funcionario') {
+        } else if (funcaoUsuario == 'Funcionario' &&
+            nomeUsuario == nome.text &&
+            senhaUsuario == senha.text) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
