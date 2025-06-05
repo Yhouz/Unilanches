@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:unilanches/cliente/home_pageClient.dart';
 import 'package:unilanches/funcionario/home_pageFuncionairio.dart';
 import 'package:unilanches/register_page.dart';
+import 'package:unilanches/src/get/user_valider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -65,6 +66,66 @@ class _LoginPageState extends State<LoginPage> {
           log('Nenhuma Função selecionada');
         }
       }
+    }
+  }
+
+  Future<bool> loginVerific() async {
+    final nomeUsuario = nome.text.trim();
+    final senhaUsuario = senha.text.trim();
+    final funcaoUsuario = selectedFuncao?.nome ?? '';
+
+    if (funcaoUsuario.isEmpty) {
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Selecione uma função')),
+      );
+      return false;
+    }
+
+    try {
+      final sucesso = await verificarLogin(
+        nomeUsuario,
+        senhaUsuario,
+        funcaoUsuario,
+      );
+
+      if (!mounted) return false; // 🔥 Verifica se o widget ainda existe
+
+      if (sucesso) {
+        log('Login bem-sucedido');
+        if (funcaoUsuario == 'Cliente') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => HomePageclient(nome: nomeUsuario, saldo: 0.00),
+            ),
+          );
+        } else if (funcaoUsuario == 'Funcionario') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => home_pageFuncionario(nome: nomeUsuario),
+            ),
+          );
+        }
+      } else {
+        log('Falha no login');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Usuário ou senha incorretos')),
+        );
+      }
+      return sucesso;
+    } catch (e) {
+      if (!mounted) return false;
+      log('Erro no login: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao verificar login: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return false;
     }
   }
 
@@ -142,7 +203,9 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   items:
-                      listFuncao.map<DropdownMenuItem<Funcao>>((Funcao funcao) {
+                      listFuncao.map<DropdownMenuItem<Funcao>>((
+                        Funcao funcao,
+                      ) {
                         return DropdownMenuItem<Funcao>(
                           value: funcao,
                           child: Text(
@@ -171,8 +234,10 @@ class _LoginPageState extends State<LoginPage> {
                 Row(
                   children: [
                     ElevatedButton(
-                      onPressed: () {
-                        loginUser();
+                      onPressed: () async {
+                        if (formKey.currentState!.validate()) {
+                          await loginVerific();
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.black,
