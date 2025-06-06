@@ -1,0 +1,144 @@
+import 'package:flutter/material.dart';
+import 'package:unilanches/src/models/produto_model.dart';
+import 'package:unilanches/src/services/cadastro_prod.dart';
+
+class CadastroProduto extends StatefulWidget {
+  const CadastroProduto({super.key});
+
+  @override
+  State<CadastroProduto> createState() => _CadastroProdutoState();
+}
+
+class _CadastroProdutoState extends State<CadastroProduto> {
+  final _formKey = GlobalKey<FormState>();
+
+  final nomeController = TextEditingController();
+  final descricaoController = TextEditingController();
+  final precoController = TextEditingController();
+  final quantidadeController = TextEditingController();
+  final categoriaController = TextEditingController();
+
+  final ProdutoApi produtoApi = ProdutoApi();
+
+  Future<void> cadastrarProduto(BuildContext context) async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final produto = ProdutoModel(
+      nome: nomeController.text.trim(),
+      descricao: descricaoController.text.trim(),
+      preco: double.tryParse(precoController.text.trim()) ?? 0,
+      quantidadeEstoque: int.tryParse(quantidadeController.text.trim()) ?? 0,
+      categoria: categoriaController.text.trim(),
+      id: null,
+    );
+
+    try {
+      final resultado = await produtoApi.cadastrarProduto(produto);
+
+      if (resultado != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro ao cadastrar produto.')),
+        );
+        _formKey.currentState!.reset();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Produto cadastrado com sucesso!')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro inesperado: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Cadastro de Produto'),
+          centerTitle: true,
+          backgroundColor: Colors.blue,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                children: [
+                  _buildTextField(nomeController, 'Nome', 'Informe o nome'),
+                  const SizedBox(height: 10),
+                  _buildTextField(descricaoController, 'Descrição', null),
+                  const SizedBox(height: 10),
+                  _buildTextField(
+                    precoController,
+                    'Preço',
+                    'Informe o preço',
+                    isNumber: true,
+                    isDouble: true,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildTextField(
+                    quantidadeController,
+                    'Quantidade em estoque',
+                    'Informe a quantidade',
+                    isNumber: true,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildTextField(
+                    categoriaController,
+                    'Categoria',
+                    'Informe a categoria',
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () => cadastrarProduto(context),
+                    child: const Text('Cadastrar Produto'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    String? errorMessage, {
+    bool isNumber = false,
+    bool isDouble = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType:
+          isNumber
+              ? const TextInputType.numberWithOptions(decimal: true)
+              : TextInputType.text,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+      validator: (value) {
+        if (errorMessage != null && (value == null || value.trim().isEmpty)) {
+          return errorMessage;
+        }
+        if (isNumber) {
+          if (isDouble && double.tryParse(value!) == null) {
+            return 'Informe um número válido';
+          }
+          if (!isDouble && int.tryParse(value!) == null) {
+            return 'Informe um número inteiro válido';
+          }
+        }
+        return null;
+      },
+    );
+  }
+}

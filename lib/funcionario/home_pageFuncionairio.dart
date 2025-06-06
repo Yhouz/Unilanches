@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:unilanches/Login_page.dart';
 import 'package:unilanches/funcionario/cadastro_funcionario.dart';
+import 'package:unilanches/funcionario/cadastro_produto.dart';
+import 'package:unilanches/funcionario/list_prod.dart';
 
 class home_pageFuncionario extends StatefulWidget {
   final String nome;
@@ -56,8 +58,25 @@ class _home_pageFuncionarioState extends State<home_pageFuncionario> {
                 ),
                 const SizedBox(width: 10),
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CadastroProduto(),
+                      ),
+                    );
+                  },
                   child: Text('Cadastro Produto'),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ListProd()),
+                    );
+                  },
+                  child: Text('Lista Produtos'),
                 ),
               ],
             ),
