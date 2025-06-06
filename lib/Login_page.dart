@@ -115,19 +115,38 @@ class _LoginPageState extends State<LoginPage> {
         }
       } else {
         log('Falha no login');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Usuário ou senha incorretos')),
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Erro no Login'),
+                content: Text('Usuário ou senha incorretos'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Ok'),
+                  ),
+                ],
+              ),
         );
       }
       return sucesso;
     } catch (e) {
       if (!mounted) return false;
       log('Erro no login: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao verificar login: $e'),
-          backgroundColor: Colors.red,
-        ),
+      showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: Text('Erro no Login'),
+              content: Text('Erro ao verificar login: $e'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Ok'),
+                ),
+              ],
+            ),
       );
       return false;
     }

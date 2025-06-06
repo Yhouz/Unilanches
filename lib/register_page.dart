@@ -39,8 +39,19 @@ class _RegisterPageState extends State<RegisterPage> {
         cpf.text.isEmpty ||
         telefone.text.isEmpty ||
         senha.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preencha todos os campos!')),
+      showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: Text('Erro no Cadastro'),
+              content: Text('Preencha todos os campos!'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Ok'),
+                ),
+              ],
+            ),
       );
       return false;
     }
@@ -64,29 +75,73 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!context.mounted) return false;
 
       if (response.statusCode == 400) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Use um e-mail institucional (@unifucamp.edu.br)'),
-          ),
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Erro no Cadastro'),
+                content: Text(
+                  'Use um e-mail institucional (@unifucamp.edu.br)',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Ok'),
+                  ),
+                ],
+              ),
         );
         return false;
       }
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Usuário registrado com sucesso!')),
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Erro no Login'),
+                content: Text('Usuário registrado com sucesso!'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Ok'),
+                  ),
+                ],
+              ),
         );
         return true;
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao registrar: ${response.body}')),
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Erro ao registrar'),
+                content: Text('Erro ao registrar: ${response.body}'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Ok'),
+                  ),
+                ],
+              ),
         );
         return false;
       }
     } catch (e) {
       if (!context.mounted) return false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro inesperado: $e')),
+      showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: Text('Erro no Cadastro'),
+              content: Text('Erro inesperado: $e'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Ok'),
+                ),
+              ],
+            ),
       );
       return false;
     } finally {
@@ -98,118 +153,133 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Registrar Usuário'),
-        backgroundColor: const Color.fromARGB(255, 3, 127, 243),
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          child: Container(
-            width: 300,
-            padding: const EdgeInsets.all(16),
-            child: Form(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Campo Nome
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Nome',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.person),
-                    ),
-                    controller: nome,
-                    focusNode: focoNome,
-                    onFieldSubmitted:
-                        (value) =>
-                            FocusScope.of(context).requestFocus(focoEmail),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Campo Email
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.email),
-                    ),
-                    controller: email,
-                    focusNode: focoEmail,
-                    keyboardType: TextInputType.emailAddress,
-                    onFieldSubmitted:
-                        (value) => FocusScope.of(context).requestFocus(focoCpf),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Campo CPF
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'CPF',
-                      prefixIcon: Icon(Icons.credit_card),
-                      border: OutlineInputBorder(),
-                    ),
-                    controller: cpf,
-                    focusNode: focoCpf,
-                    keyboardType: TextInputType.number,
-                    onFieldSubmitted:
-                        (value) =>
-                            FocusScope.of(context).requestFocus(focoTelefone),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Campo Telefone
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Telefone',
-                      prefixIcon: Icon(Icons.phone),
-                      border: OutlineInputBorder(),
-                    ),
-                    controller: telefone,
-                    focusNode: focoTelefone,
-                    keyboardType: TextInputType.phone,
-                    onFieldSubmitted:
-                        (value) =>
-                            FocusScope.of(context).requestFocus(focoSenha),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Campo Senha
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: 'Senha',
-                      prefixIcon: Icon(Icons.lock),
-                      border: OutlineInputBorder(),
-                    ),
-                    obscureText: true,
-                    controller: senha,
-                    focusNode: focoSenha,
-                    keyboardType: TextInputType.visiblePassword,
-                    onFieldSubmitted:
-                        (value) => FocusScope.of(context).unfocus(),
-                  ),
-                  const SizedBox(height: 30),
-
-                  // Dropdown Função
-
-                  // Botão Registrar
-                  _isLoading
-                      ? const CircularProgressIndicator()
-                      : ElevatedButton(
-                        onPressed: () async {
-                          bool sucesso = await registerUser(context);
-                          if (sucesso) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LoginPage(),
-                              ),
-                            );
-                          }
-                        },
-                        child: const Text('Registrar'),
+    return Center(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'Registrar Usuário',
+          ),
+          centerTitle: true,
+          backgroundColor: const Color.fromARGB(255, 3, 127, 243),
+        ),
+        body: Center(
+          child: SingleChildScrollView(
+            child: Container(
+              width: 300,
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Campo Nome
+                    TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: 'Nome',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.person),
                       ),
-                ],
+                      controller: nome,
+                      focusNode: focoNome,
+                      onFieldSubmitted:
+                          (value) =>
+                              FocusScope.of(context).requestFocus(focoEmail),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Campo Email
+                    TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.email),
+                      ),
+                      controller: email,
+                      focusNode: focoEmail,
+                      keyboardType: TextInputType.emailAddress,
+                      onFieldSubmitted:
+                          (value) =>
+                              FocusScope.of(context).requestFocus(focoCpf),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Campo CPF
+                    TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: 'CPF',
+                        prefixIcon: Icon(Icons.credit_card),
+                        border: OutlineInputBorder(),
+                      ),
+                      controller: cpf,
+                      focusNode: focoCpf,
+                      keyboardType: TextInputType.number,
+                      onFieldSubmitted:
+                          (value) =>
+                              FocusScope.of(context).requestFocus(focoTelefone),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Campo Telefone
+                    TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: 'Telefone',
+                        prefixIcon: Icon(Icons.phone),
+                        border: OutlineInputBorder(),
+                      ),
+                      controller: telefone,
+                      focusNode: focoTelefone,
+                      keyboardType: TextInputType.phone,
+                      onFieldSubmitted:
+                          (value) =>
+                              FocusScope.of(context).requestFocus(focoSenha),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Campo Senha
+                    TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: 'Senha',
+                        prefixIcon: Icon(Icons.lock),
+                        border: OutlineInputBorder(),
+                      ),
+                      obscureText: true,
+                      controller: senha,
+                      focusNode: focoSenha,
+                      keyboardType: TextInputType.visiblePassword,
+                      onFieldSubmitted:
+                          (value) => FocusScope.of(context).unfocus(),
+                    ),
+                    const SizedBox(height: 30),
+
+                    _isLoading
+                        ? const CircularProgressIndicator()
+                        : ElevatedButton(
+                          onPressed: () async {
+                            bool sucesso = await registerUser(context);
+                            if (sucesso) {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const LoginPage(),
+                                ),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.black,
+                            backgroundColor: Colors.red,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                50,
+                              ), // Borda arredondada
+                            ),
+                          ),
+                          child: Text(
+                            'Registrar',
+                            style: TextStyle(fontSize: 20),
+                          ),
+                        ),
+                  ],
+                ),
               ),
             ),
           ),

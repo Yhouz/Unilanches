@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:unilanches/Login_page.dart';
+import 'package:unilanches/funcionario/cadastro_funcionario.dart';
 
 class home_pageFuncionario extends StatefulWidget {
   final String nome;
@@ -35,27 +36,33 @@ class _home_pageFuncionarioState extends State<home_pageFuncionario> {
           ],
         ),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Bem-vindo(a) ${widget.nome}'),
-            OutlinedButton.icon(
-              onPressed: () {
-                // Ação do botão "Fazer Pedido"
-              },
-              icon: Icon(Icons.add),
-              label: Text('Cadastrar Produto'),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CadastroFuncionario(),
+                      ),
+                    );
+                  },
+                  child: Text('Cadastro Funcionario'),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () {},
+                  child: Text('Cadastro Produto'),
+                ),
+              ],
             ),
-            OutlinedButton.icon(
-              onPressed: () {
-                // Ação do botão "Ver Pedidos"
-              },
-              icon: Icon(Icons.list),
-              label: Text('Ver Produtos'),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
