@@ -25,7 +25,7 @@ class _ListProdState extends State<ListProd> {
         produtosApi = lista.toList();
       });
     } catch (e) {
-      print('Erro ao carregar produtos: $e');
+      // print('Erro ao carregar produtos: $e');
     }
   }
 

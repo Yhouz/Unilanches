@@ -20,7 +20,7 @@ class _CadastroProdutoState extends State<CadastroProduto> {
 
   final ProdutoApi produtoApi = ProdutoApi();
 
-  Future<void> cadastrarProduto(BuildContext context) async {
+  Future<void> cadastrarProduto() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -37,6 +37,7 @@ class _CadastroProdutoState extends State<CadastroProduto> {
     try {
       final resultado = await produtoApi.cadastrarProduto(produto);
 
+      if (!mounted) return;
       if (resultado != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Erro ao cadastrar produto.')),
@@ -48,6 +49,7 @@ class _CadastroProdutoState extends State<CadastroProduto> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro inesperado: $e')),
       );
@@ -96,7 +98,7 @@ class _CadastroProdutoState extends State<CadastroProduto> {
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: () => cadastrarProduto(context),
+                    onPressed: () => cadastrarProduto(),
                     child: const Text('Cadastrar Produto'),
                   ),
                 ],

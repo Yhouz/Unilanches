@@ -12,7 +12,15 @@ class CadastroFuncAPI {
     String telefone,
     String senha,
     String cargo,
-    String tipoUsuario
+    String tipoUsuario,
+    String dtAdmissao,
+    String dtNascimento,
+    String salario,
+    String endereco, 
+    String numero,
+    String uf,
+    String cidade
+
   ) async {
     final url = Uri.parse(baseUrl);
 
@@ -26,7 +34,14 @@ class CadastroFuncAPI {
         'telefone': telefone,
         'cpf': cpf,
         'cargo': cargo,
-        'tipoUsuario': 'funcionario',
+        'tipoUsuario': tipoUsuario,
+        'dt_admissao': dtAdmissao,
+        'dt_nascimento': dtNascimento,
+        'salario': salario,
+        'endereco': endereco,
+        'numero': numero,
+        'uf': uf,
+        'cidade': cidade,
       }),
     );
 

@@ -22,7 +22,7 @@ class ProdutoApi {
         // Sucesso no cadastro, retorna o produto criado (a partir da resposta JSON)
       } else {
         // Pode lançar um erro ou retornar null em caso de falha
-        print('Falha no cadastro: ${response.statusCode} - ${response.body}');
+        //  print('Falha no cadastro: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
