@@ -17,6 +17,27 @@ class _CadastroProdutoState extends State<CadastroProduto> {
   final precoController = TextEditingController();
   final quantidadeController = TextEditingController();
   final categoriaController = TextEditingController();
+  final custoController = TextEditingController();
+  final margemController = TextEditingController();
+  final unidadeController = TextEditingController();
+
+  final List<String> unidadeList = ['KG', 'UND', 'G', 'QT'];
+
+  final List<String> listaCategorias = [
+    'Bebidas',
+    'Lanches',
+    'Doces',
+    'Salgados',
+    'Sanduíches',
+    'Refrigerantes',
+    'Sucos',
+    'Cafés',
+    'Sobremesas',
+    'Pães',
+  ];
+
+  String? unidadeSelecionada;
+  String? categoriaSelecionada;
 
   final ProdutoApi produtoApi = ProdutoApi();
 
@@ -32,6 +53,9 @@ class _CadastroProdutoState extends State<CadastroProduto> {
       quantidadeEstoque: int.tryParse(quantidadeController.text.trim()) ?? 0,
       categoria: categoriaController.text.trim(),
       id: null,
+      custo: custoController.text.trim(),
+      margem: margemController.text.trim(),
+      unidade: unidadeController.text.trim(),
     );
 
     try {
@@ -91,12 +115,76 @@ class _CadastroProdutoState extends State<CadastroProduto> {
                     isNumber: true,
                   ),
                   const SizedBox(height: 10),
-                  _buildTextField(
-                    categoriaController,
-                    'Categoria',
-                    'Informe a categoria',
+                  DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      labelText: 'Categoria',
+                      border: OutlineInputBorder(),
+                    ),
+                    value: categoriaSelecionada,
+                    items:
+                        listaCategorias.map((categoria) {
+                          return DropdownMenuItem<String>(
+                            value: categoria,
+                            child: Text(categoria),
+                          );
+                        }).toList(),
+                    onChanged: (valor) {
+                      setState(() {
+                        categoriaSelecionada = valor;
+                        categoriaController.text = valor ?? '';
+                      });
+                    },
+                    validator: (valor) {
+                      if (valor == null || valor.isEmpty) {
+                        return 'Informe a categoria';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 20),
+                  _buildTextField(
+                    custoController,
+                    'Custo',
+                    'Informe o Custo',
+                    isNumber: true,
+                  ),
+
+                  const SizedBox(height: 20),
+                  _buildTextField(
+                    margemController,
+                    'Margem',
+                    'Informe a Margem',
+                    isNumber: true,
+                  ),
+                  const SizedBox(height: 20),
+                  DropdownButtonFormField<String>(
+                    decoration: InputDecoration(
+                      labelText: 'Unidade',
+                      border: OutlineInputBorder(),
+                    ),
+                    value: unidadeSelecionada,
+                    items:
+                        unidadeList.map((unidade) {
+                          return DropdownMenuItem<String>(
+                            value: unidade,
+                            child: Text(unidade),
+                          );
+                        }).toList(),
+                    onChanged: (valor) {
+                      setState(() {
+                        unidadeSelecionada = valor;
+                        unidadeController.text = valor ?? '';
+                      });
+                    },
+                    validator: (valor) {
+                      if (valor == null || valor.isEmpty) {
+                        return 'Informe a unidade';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+
                   ElevatedButton(
                     onPressed: () => cadastrarProduto(),
                     child: const Text('Cadastrar Produto'),

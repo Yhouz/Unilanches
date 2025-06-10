@@ -5,6 +5,9 @@ class ProdutoModel {
   double preco;
   int quantidadeEstoque;
   String categoria;
+  String custo;
+  String margem;
+  String unidade;
 
   ProdutoModel({
     required this.id,
@@ -13,6 +16,9 @@ class ProdutoModel {
     required this.preco,
     required this.quantidadeEstoque,
     required this.categoria,
+    required this.custo,
+    required this.margem,
+    required this.unidade,
   });
 
   // Converte objeto ProdutoModel para JSON
@@ -24,6 +30,9 @@ class ProdutoModel {
       'preco': preco,
       'quantidade_estoque': quantidadeEstoque,
       'categoria': categoria,
+      'custo': custo,
+      'margem': margem,
+      'unidade': unidade,
     };
   }
 }

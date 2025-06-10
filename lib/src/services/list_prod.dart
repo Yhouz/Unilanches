@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:unilanches/src/models/edit_prod_model.dart';
 import 'package:unilanches/src/models/list_prod_models.dart';
 
 class ProdutoListApi {
@@ -18,4 +19,6 @@ class ProdutoListApi {
       throw Exception('Erro ao carregar produtos');
     }
   }
+
+  Future<void> editarProduto(EditProdModel produtoEditado) async {}
 }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:unilanches/src/models/list_prod_models.dart';
 import 'package:unilanches/src/services/list_prod.dart';
+import 'package:unilanches/src/models/edit_prod_model.dart';
+
+import '../src/services/edit_prod.dart';
 
 class ListProd extends StatefulWidget {
   const ListProd({super.key});
@@ -27,6 +30,75 @@ class _ListProdState extends State<ListProd> {
     } catch (e) {
       // print('Erro ao carregar produtos: $e');
     }
+  }
+
+  Future<void> _editeButtom(
+    BuildContext context,
+    EditProdModel produto,
+    Function(EditProdModel) onSalvar,
+  ) async {
+    final nomeController = TextEditingController(text: produto.nome);
+    final precoController = TextEditingController(
+      text: produto.preco.toString(),
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 16,
+            right: 16,
+            top: 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Editar Produto',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nomeController,
+                decoration: InputDecoration(labelText: 'Nome'),
+              ),
+              TextField(
+                controller: precoController,
+                keyboardType: TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(labelText: 'Preço'),
+              ),
+              // TextField(
+              //  controller: estoqueController,
+              ////  keyboardType: TextInputType.number,
+              // decoration: InputDecoration(labelText: 'Estoque'),
+              //  ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: () {
+                  final novoProduto = EditProdModel(
+                    id: produto.id,
+                    nome: nomeController.text,
+                    preco: double.tryParse(precoController.text) ?? 0.0,
+                    // quantidadeEstoque: int.tryParse(estoqueController.text) ?? 0,
+                    // categoria: produto.categoria,
+                  );
+                  onSalvar(novoProduto);
+                  Navigator.of(context).pop();
+                },
+                icon: Icon(Icons.save),
+                label: Text('Salvar'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -65,7 +137,32 @@ class _ListProdState extends State<ListProd> {
                           IconButton(
                             icon: const Icon(Icons.edit, color: Colors.blue),
                             onPressed: () {
-                              // editar ação
+                              _editeButtom(
+                                context,
+                                EditProdModel(
+                                  id: produto.id,
+                                  nome: produto.nome,
+                                  preco: produto.preco,
+                                ),
+                                (produtoEditado) async {
+                                  final resultado = await ProdutoEditApi()
+                                      .editProd(produtoEditado);
+
+                                  if (resultado != null) {
+                                    await carregarProdutos(); // Recarrega a lista atualizada
+                                    // setState não obrigatório aqui, pois carregarProdutos já chama setState
+                                  } else {
+                                    // Aqui você pode mostrar um snackbar ou alerta para o usuário
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Erro ao editar o produto',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                              );
                             },
                           ),
                           IconButton(
