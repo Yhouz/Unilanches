@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:unilanches/src/models/list_prod_models.dart';
 import 'package:unilanches/src/services/list_prod.dart';
 import 'package:unilanches/src/models/edit_prod_model.dart';
-
+import '../src/services/delete_prod.dart';
 import '../src/services/edit_prod.dart';
 
 class ListProd extends StatefulWidget {
@@ -32,17 +32,17 @@ class _ListProdState extends State<ListProd> {
     }
   }
 
-  Future<void> _editeButtom(
+  Future<bool?> _editeButtom(
     BuildContext context,
     EditProdModel produto,
     Function(EditProdModel) onSalvar,
-  ) async {
+  ) {
     final nomeController = TextEditingController(text: produto.nome);
     final precoController = TextEditingController(
       text: produto.preco.toString(),
     );
 
-    showModalBottomSheet(
+    return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       shape: RoundedRectangleBorder(
@@ -73,23 +73,48 @@ class _ListProdState extends State<ListProd> {
                 keyboardType: TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(labelText: 'Preço'),
               ),
-              // TextField(
-              //  controller: estoqueController,
-              ////  keyboardType: TextInputType.number,
-              // decoration: InputDecoration(labelText: 'Estoque'),
-              //  ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
-                onPressed: () {
+                onPressed: () async {
                   final novoProduto = EditProdModel(
                     id: produto.id,
                     nome: nomeController.text,
-                    preco: double.tryParse(precoController.text) ?? 0.0,
-                    // quantidadeEstoque: int.tryParse(estoqueController.text) ?? 0,
-                    // categoria: produto.categoria,
+                    preco: double.parse(precoController.text),
                   );
-                  onSalvar(novoProduto);
-                  Navigator.of(context).pop();
+
+                  try {
+                    final resultado = await ProdutoEditApi().editProd(
+                      novoProduto,
+                    );
+
+                    if (resultado != null) {
+                      await carregarProdutos();
+
+                      Navigator.of(
+                        context,
+                      ).pop(true); // Retorna true indicando sucesso
+                    } else {
+                      throw Exception('Resposta nula da API ao editar produto');
+                    }
+                  } catch (e, stackTrace) {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: const Text('Erro'),
+                          content: Text('Erro ao salvar: ${e.toString()}'),
+                          actions: [
+                            TextButton(
+                              child: const Text('Fechar'),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  }
                 },
                 icon: Icon(Icons.save),
                 label: Text('Salvar'),
@@ -110,7 +135,9 @@ class _ListProdState extends State<ListProd> {
         centerTitle: true,
       ),
       body:
-          produtosApi.isEmpty
+          produtosApi == null
+              ? const Center(child: CircularProgressIndicator())
+              : produtosApi.isEmpty
               ? const Center(child: CircularProgressIndicator())
               : ListView.builder(
                 itemCount: produtosApi.length,
@@ -136,39 +163,77 @@ class _ListProdState extends State<ListProd> {
                         children: [
                           IconButton(
                             icon: const Icon(Icons.edit, color: Colors.blue),
-                            onPressed: () {
-                              _editeButtom(
+                            onPressed: () async {
+                              final mudou = await _editeButtom(
                                 context,
                                 EditProdModel(
                                   id: produto.id,
                                   nome: produto.nome,
                                   preco: produto.preco,
                                 ),
-                                (produtoEditado) async {
-                                  final resultado = await ProdutoEditApi()
-                                      .editProd(produtoEditado);
-
-                                  if (resultado != null) {
-                                    await carregarProdutos(); // Recarrega a lista atualizada
-                                    // setState não obrigatório aqui, pois carregarProdutos já chama setState
-                                  } else {
-                                    // Aqui você pode mostrar um snackbar ou alerta para o usuário
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Erro ao editar o produto',
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                },
+                                (produtoEditado) async {},
                               );
+                              if (mudou == true) {
+                                await carregarProdutos();
+                              }
                             },
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () {
-                              // deletar ação
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder:
+                                    (ctx) => AlertDialog(
+                                      title: const Text('Confirmar exclusão'),
+                                      content: Text(
+                                        'Deseja excluir o produto "${produto.nome}"?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed:
+                                              () =>
+                                                  Navigator.of(ctx).pop(false),
+                                          child: const Text('Cancelar'),
+                                        ),
+                                        TextButton(
+                                          onPressed:
+                                              () => Navigator.of(ctx).pop(true),
+                                          child: const Text(
+                                            'Excluir',
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                              );
+
+                              if (confirm == true) {
+                                try {
+                                  await ProdDeletAPI().deletarProduto(
+                                    produto.id,
+                                  );
+                                  await carregarProdutos(); // Atualiza a lista
+                                } catch (e) {
+                                  showDialog(
+                                    context: context,
+                                    builder:
+                                        (ctx) => AlertDialog(
+                                          title: const Text('Erro'),
+                                          content: Text(
+                                            'Erro ao excluir o produto: ${e.toString()}',
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed:
+                                                  () => Navigator.of(ctx).pop(),
+                                              child: const Text('OK'),
+                                            ),
+                                          ],
+                                        ),
+                                  );
+                                }
+                              }
                             },
                           ),
                         ],

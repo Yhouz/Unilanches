@@ -1,30 +1,28 @@
 class EditProdModel {
-  int id;
-  String nome;
-  String? descricao;
-  double preco;
+  final int id;
+  final String nome;
+  final double preco;
 
   EditProdModel({
     required this.id,
     required this.nome,
-    this.descricao,
     required this.preco,
   });
 
-  factory EditProdModel.fromJson(Map<String, dynamic> json) {
+  factory EditProdModel.fromJson(
+    Map<String, dynamic> json, {
+    required int idAntigo,
+  }) {
     return EditProdModel(
-      id: json['id'],
-      nome: json['nome'],
-      descricao: json['descricao'],
-      preco: (json['preco'] as num).toDouble(),
+      id: json['id'] ?? idAntigo,
+      nome: json['nome'] ?? '',
+      preco: double.tryParse(json['preco'].toString()) ?? 0.0,
     );
   }
-
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'nome': nome,
-      'descricao': descricao,
       'preco': preco,
     };
   }
