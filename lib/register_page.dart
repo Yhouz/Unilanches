@@ -257,6 +257,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             bool sucesso = await registerUser(context);
                             if (sucesso) {
                               Navigator.pushReplacement(
+                                // ignore: use_build_context_synchronously
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => const LoginPage(),

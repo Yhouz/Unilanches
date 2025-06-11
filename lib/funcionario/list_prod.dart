@@ -91,13 +91,15 @@ class _ListProdState extends State<ListProd> {
                       await carregarProdutos();
 
                       Navigator.of(
+                        // ignore: use_build_context_synchronously
                         context,
                       ).pop(true); // Retorna true indicando sucesso
                     } else {
                       throw Exception('Resposta nula da API ao editar produto');
                     }
-                  } catch (e, stackTrace) {
+                  } catch (e) {
                     showDialog(
+                      // ignore: use_build_context_synchronously
                       context: context,
                       builder: (BuildContext context) {
                         return AlertDialog(
@@ -135,7 +137,7 @@ class _ListProdState extends State<ListProd> {
         centerTitle: true,
       ),
       body:
-          produtosApi == null
+          produtosApi == Null
               ? const Center(child: CircularProgressIndicator())
               : produtosApi.isEmpty
               ? const Center(child: CircularProgressIndicator())
@@ -216,6 +218,7 @@ class _ListProdState extends State<ListProd> {
                                   await carregarProdutos(); // Atualiza a lista
                                 } catch (e) {
                                   showDialog(
+                                    // ignore: use_build_context_synchronously
                                     context: context,
                                     builder:
                                         (ctx) => AlertDialog(

@@ -208,11 +208,29 @@ class _CadastroFuncionarioState extends State<CadastroFuncionario> {
           title: const Text('Registrar Funcionário'),
           centerTitle: true,
           backgroundColor: const Color.fromARGB(255, 3, 127, 243),
+          actions: [
+            TextButton.icon(
+              onPressed: () {
+                // Navigator.push(
+                // context,
+                // MaterialPageRoute(builder: (context) => ()),
+                //);
+              },
+              icon: Icon(
+                Icons.search,
+                color: Colors.black,
+              ),
+              label: Text(
+                'Consutar Funcionario',
+                style: TextStyle(color: Colors.black),
+              ),
+            ),
+          ],
         ),
         body: Center(
           child: SingleChildScrollView(
             child: Container(
-              width: 400,
+              // width: 400,
               padding: const EdgeInsets.all(16),
               child: Form(
                 child: Column(

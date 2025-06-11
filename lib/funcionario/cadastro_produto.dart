@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:unilanches/funcionario/list_prod.dart';
 import 'package:unilanches/src/models/produto_model.dart';
 import 'package:unilanches/src/services/cadastro_prod.dart';
 
@@ -82,115 +83,131 @@ class _CadastroProdutoState extends State<CadastroProduto> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Cadastro de Produto'),
-          centerTitle: true,
-          backgroundColor: Colors.blue,
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Form(
-              key: _formKey,
-              child: ListView(
-                children: [
-                  _buildTextField(nomeController, 'Nome', 'Informe o nome'),
-                  const SizedBox(height: 10),
-                  _buildTextField(descricaoController, 'Descrição', null),
-                  const SizedBox(height: 10),
-                  _buildTextField(
-                    precoController,
-                    'Preço',
-                    'Informe o preço',
-                    isNumber: true,
-                    isDouble: true,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Cadastro de Produto'),
+        centerTitle: true,
+        backgroundColor: Colors.blue,
+        actions: [
+          TextButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ListProd()),
+              );
+            },
+            icon: Icon(
+              Icons.search,
+              color: Colors.black,
+            ),
+            label: Text(
+              'Consutar produto',
+              style: TextStyle(color: Colors.black),
+            ),
+          ),
+        ],
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              children: [
+                _buildTextField(nomeController, 'Nome', 'Informe o nome'),
+                const SizedBox(height: 10),
+                _buildTextField(descricaoController, 'Descrição', null),
+                const SizedBox(height: 10),
+                _buildTextField(
+                  precoController,
+                  'Preço',
+                  'Informe o preço',
+                  isNumber: true,
+                  isDouble: true,
+                ),
+                const SizedBox(height: 10),
+                _buildTextField(
+                  quantidadeController,
+                  'Quantidade em estoque',
+                  'Informe a quantidade',
+                  isNumber: true,
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                    labelText: 'Categoria',
+                    border: OutlineInputBorder(),
                   ),
-                  const SizedBox(height: 10),
-                  _buildTextField(
-                    quantidadeController,
-                    'Quantidade em estoque',
-                    'Informe a quantidade',
-                    isNumber: true,
-                  ),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<String>(
-                    decoration: InputDecoration(
-                      labelText: 'Categoria',
-                      border: OutlineInputBorder(),
-                    ),
-                    value: categoriaSelecionada,
-                    items:
-                        listaCategorias.map((categoria) {
-                          return DropdownMenuItem<String>(
-                            value: categoria,
-                            child: Text(categoria),
-                          );
-                        }).toList(),
-                    onChanged: (valor) {
-                      setState(() {
-                        categoriaSelecionada = valor;
-                        categoriaController.text = valor ?? '';
-                      });
-                    },
-                    validator: (valor) {
-                      if (valor == null || valor.isEmpty) {
-                        return 'Informe a categoria';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  _buildTextField(
-                    custoController,
-                    'Custo',
-                    'Informe o Custo',
-                    isNumber: true,
-                  ),
+                  value: categoriaSelecionada,
+                  items:
+                      listaCategorias.map((categoria) {
+                        return DropdownMenuItem<String>(
+                          value: categoria,
+                          child: Text(categoria),
+                        );
+                      }).toList(),
+                  onChanged: (valor) {
+                    setState(() {
+                      categoriaSelecionada = valor;
+                      categoriaController.text = valor ?? '';
+                    });
+                  },
+                  validator: (valor) {
+                    if (valor == null || valor.isEmpty) {
+                      return 'Informe a categoria';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                _buildTextField(
+                  custoController,
+                  'Custo',
+                  'Informe o Custo',
+                  isNumber: true,
+                ),
 
-                  const SizedBox(height: 20),
-                  _buildTextField(
-                    margemController,
-                    'Margem',
-                    'Informe a Margem',
-                    isNumber: true,
+                const SizedBox(height: 20),
+                _buildTextField(
+                  margemController,
+                  'Margem',
+                  'Informe a Margem',
+                  isNumber: true,
+                ),
+                const SizedBox(height: 20),
+                DropdownButtonFormField<String>(
+                  decoration: InputDecoration(
+                    labelText: 'Unidade',
+                    border: OutlineInputBorder(),
                   ),
-                  const SizedBox(height: 20),
-                  DropdownButtonFormField<String>(
-                    decoration: InputDecoration(
-                      labelText: 'Unidade',
-                      border: OutlineInputBorder(),
-                    ),
-                    value: unidadeSelecionada,
-                    items:
-                        unidadeList.map((unidade) {
-                          return DropdownMenuItem<String>(
-                            value: unidade,
-                            child: Text(unidade),
-                          );
-                        }).toList(),
-                    onChanged: (valor) {
-                      setState(() {
-                        unidadeSelecionada = valor;
-                        unidadeController.text = valor ?? '';
-                      });
-                    },
-                    validator: (valor) {
-                      if (valor == null || valor.isEmpty) {
-                        return 'Informe a unidade';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
+                  value: unidadeSelecionada,
+                  items:
+                      unidadeList.map((unidade) {
+                        return DropdownMenuItem<String>(
+                          value: unidade,
+                          child: Text(unidade),
+                        );
+                      }).toList(),
+                  onChanged: (valor) {
+                    setState(() {
+                      unidadeSelecionada = valor;
+                      unidadeController.text = valor ?? '';
+                    });
+                  },
+                  validator: (valor) {
+                    if (valor == null || valor.isEmpty) {
+                      return 'Informe a unidade';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
 
-                  ElevatedButton(
-                    onPressed: () => cadastrarProduto(),
-                    child: const Text('Cadastrar Produto'),
-                  ),
-                ],
-              ),
+                ElevatedButton(
+                  onPressed: () => cadastrarProduto(),
+                  child: const Text('Cadastrar Produto'),
+                ),
+              ],
             ),
           ),
         ),

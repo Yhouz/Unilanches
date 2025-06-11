@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:unilanches/Login_page.dart';
+import 'package:unilanches/funcionario/cadastro_fornecedor.dart';
 import 'package:unilanches/funcionario/cadastro_funcionario.dart';
 import 'package:unilanches/funcionario/cadastro_produto.dart';
 import 'package:unilanches/funcionario/list_prod.dart';
@@ -16,7 +17,14 @@ class _home_pageFuncionarioState extends State<home_pageFuncionario> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         backgroundColor: const Color.fromARGB(255, 3, 127, 243),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: Icon(Icons.settings),
+          ),
+        ],
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
@@ -43,7 +51,9 @@ class _home_pageFuncionarioState extends State<home_pageFuncionario> {
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Row(
+            child: Wrap(
+              spacing: 3,
+              runSpacing: 10,
               children: [
                 ElevatedButton(
                   onPressed: () {
@@ -67,6 +77,18 @@ class _home_pageFuncionarioState extends State<home_pageFuncionario> {
                     );
                   },
                   child: Text('Cadastro Produto'),
+                ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CadastroFornecedor(),
+                      ),
+                    );
+                  },
+                  child: Text('Cadastro Fornecedor'),
                 ),
                 const SizedBox(width: 10),
                 ElevatedButton(
