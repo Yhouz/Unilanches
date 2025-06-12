@@ -59,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => home_pageFuncionario(nome: nome.text),
+              builder: (context) => HomePageFuncionario(nome: nome.text),
             ),
           );
         } else {
@@ -105,7 +105,7 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => home_pageFuncionario(nome: nomeUsuario),
+              builder: (context) => HomePageFuncionario(nome: nomeUsuario),
             ),
           );
         }

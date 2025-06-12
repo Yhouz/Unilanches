@@ -12,7 +12,7 @@ class HomePageclient extends StatefulWidget {
 }
 
 class _HomePageclientState extends State<HomePageclient> {
-  final Map<String, double> produtos = {'Jantinha!': 12.99, 'Salgado': 3.50};
+  final Map<String, double> produtos = {};
   final List<String> items = [
     'Produto 1',
     'Produto 2',
@@ -21,6 +21,24 @@ class _HomePageclientState extends State<HomePageclient> {
   ];
   bool mostrarCardapio = false;
   bool reservar = false;
+
+  @override
+  void initState() {
+    super.initState();
+    carregarCardapioDoDia();
+  }
+
+  void carregarCardapioDoDia() {
+    setState(() {
+      produtos.clear();
+      produtos.addAll({
+        'Jantinha Especial': 15.99,
+        'Salgado de Frango': 4.50,
+        'Refrigerante': 3.00,
+        'Suco Natural': 5.00,
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +88,7 @@ class _HomePageclientState extends State<HomePageclient> {
                         shadows: [
                           Shadow(
                             blurRadius: 10,
-                            color: Colors.white.withValues(alpha: (0.1 * 255)),
+                            color: Colors.white.withOpacity(0.1),
                           ),
                         ],
                       ),
@@ -151,6 +169,7 @@ class _HomePageclientState extends State<HomePageclient> {
                       ),
                     ),
                     const SizedBox(height: 20),
+
                     if (mostrarCardapio)
                       Container(
                         constraints: const BoxConstraints(
@@ -173,9 +192,9 @@ class _HomePageclientState extends State<HomePageclient> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
+                                const Text(
                                   'Cardápio',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -211,6 +230,7 @@ class _HomePageclientState extends State<HomePageclient> {
                           ],
                         ),
                       ),
+
                     if (reservar)
                       Container(
                         constraints: const BoxConstraints(
