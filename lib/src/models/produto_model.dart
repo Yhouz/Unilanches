@@ -1,27 +1,41 @@
 class ProdutoModel {
-  int? id;
-  String nome;
-  String? descricao;
-  double preco;
-  int quantidadeEstoque;
-  String categoria;
-  String custo;
-  String margem;
-  String unidade;
+  final int? id;
+  final String nome;
+  final String? descricao;
+  final double preco;
+  final int quantidadeEstoque;
+  final String? categoria;
+  final String? custo;
+  final String? margem;
+  final String? unidade;
 
   ProdutoModel({
     required this.id,
     required this.nome,
-    required this.descricao,
+    this.descricao,
     required this.preco,
     required this.quantidadeEstoque,
-    required this.categoria,
-    required this.custo,
-    required this.margem,
-    required this.unidade,
+    this.categoria,
+    this.custo,
+    this.margem,
+    this.unidade,
   });
 
-  // Converte objeto ProdutoModel para JSON
+  factory ProdutoModel.fromJson(Map<String, dynamic> json) {
+    return ProdutoModel(
+      id: json["id"] as int?,
+      nome: json["nome"] as String,
+      descricao: json["descricao"] as String?,
+      // LINHA CORRIGIDA AQUI:
+      preco: double.parse(json["preco"].toString()),
+      quantidadeEstoque: json["quantidade_estoque"] as int,
+      categoria: json["categoria"] as String?,
+      custo: json["custo"] as String?,
+      margem: json["margem"] as String?,
+      unidade: json["unidade"] as String?,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       if (id != null) 'id': id,

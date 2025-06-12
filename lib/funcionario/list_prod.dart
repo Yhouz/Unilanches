@@ -25,7 +25,7 @@ class _ListProdState extends State<ListProd> {
     try {
       final lista = await ProdutoListApi().listarProdutos();
       setState(() {
-        produtosApi = lista.toList();
+        produtosApi = lista.cast<ProdutoListModel>();
       });
     } catch (e) {
       // print('Erro ao carregar produtos: $e');

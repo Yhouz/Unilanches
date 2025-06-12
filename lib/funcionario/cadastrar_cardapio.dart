@@ -1,25 +1,33 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show Uint8List;
-import 'package:unilanches/src/models/cadastro_cardapio.dart';
-import 'package:unilanches/src/services/cadastro_cardapio.dart';
-import 'package:unilanches/src/services/list_prod.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart';
 
-class CadastroCardapioPage extends StatefulWidget {
-  const CadastroCardapioPage({super.key});
+import '../src/models/cadastro_cardapio.dart' show CardapioModel;
+import '../src/models/produto_model.dart' show ProdutoModel;
+import '../src/services/cadastro_cardapio.dart' show CardapioApiService;
+import '../src/services/list_prod.dart' show ProdutoListApi;
+
+class CadastroCardapioAprimoradoPage extends StatefulWidget {
+  const CadastroCardapioAprimoradoPage({super.key});
 
   @override
-  _CadastroCardapioPageState createState() => _CadastroCardapioPageState();
+  State<CadastroCardapioAprimoradoPage> createState() =>
+      _CadastroCardapioAprimoradoPageState();
 }
 
-class _CadastroCardapioPageState extends State<CadastroCardapioPage> {
+class _CadastroCardapioAprimoradoPageState
+    extends State<CadastroCardapioAprimoradoPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _categoriaController = TextEditingController();
   DateTime? _dataSelecionada;
 
-  final List<Map<String, dynamic>> _produtos = [];
+  List<ProdutoModel> _produtos = [];
+  List<int> _produtosSelecionados = [];
+  Uint8List? _imagemCardapio;
+  String? _nomeImagemCardapio;
   bool _carregando = true;
+  bool _salvando = false;
 
   @override
   void initState() {
@@ -29,264 +37,501 @@ class _CadastroCardapioPageState extends State<CadastroCardapioPage> {
 
   Future<void> _carregarProdutos() async {
     try {
+      setState(() => _carregando = true);
+      print("Tentando carregar produtos...");
       final produtosApi = await ProdutoListApi().listarProdutos();
+      print("Produtos recebidos da API: ${produtosApi.length} produtos");
+      for (var produto in produtosApi) {
+        print("Produto: ${produto.nome} (ID: ${produto.id})");
+      }
 
       setState(() {
-        _produtos.clear();
-        for (var produto in produtosApi) {
-          _produtos.add({
-            'id': produto.id,
-            'nome': produto.nome,
-            'preco': produto.preco,
-            'selecionado': false,
-            'imagem': null,
-          });
-        }
+        _produtos = produtosApi;
         _carregando = false;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar produtos: $e')),
-      );
       setState(() => _carregando = false);
+      _mostrarErro("Erro ao carregar produtos: $e");
+      print("Erro ao carregar produtos: $e");
     }
   }
 
-  Future<void> _selecionarData(BuildContext context) async {
+  Future<void> _selecionarData() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2024),
-      lastDate: DateTime(2030),
+      initialDate: _dataSelecionada ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      locale: const Locale('pt', 'BR'),
     );
+
     if (picked != null) {
-      setState(() {
-        _dataSelecionada = picked;
-      });
+      setState(() => _dataSelecionada = picked);
     }
   }
 
-  Future<void> _escolherImagemWeb(int index) async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      allowMultiple: false,
-      withData: true,
-    );
-
-    if (result != null && result.files.single.bytes != null) {
-      setState(() {
-        _produtos[index]['imagem'] = result.files.single.bytes;
-      });
-    }
-  }
-
-  void _salvarCardapio() async {
-    if (_formKey.currentState!.validate() && _dataSelecionada != null) {
-      final nome = _nomeController.text;
-      final categoria = _categoriaController.text;
-      // Convertendo DateTime para string YYYY-MM-DD
-      final data = _dataSelecionada!.toIso8601String().split('T').first;
-
-      // Pegar só os IDs dos produtos selecionados
-      final produtosSelecionados =
-          _produtos
-              .where((p) => p['selecionado'] == true)
-              .map<int>((p) => p['id'] as int)
-              .toList();
-
-      if (produtosSelecionados.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Selecione ao menos um produto')),
-        );
-        return;
-      }
-
-      final novoCardapio = CardapioModel(
-        nome: nome,
-        categoria: categoria,
-        data: data,
-        produtos: produtosSelecionados,
+  Future<void> _selecionarImagemCardapio() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+        withData: true,
       );
 
-      try {
-        final response = await CardapioApi().criarCardapio(novoCardapio);
+      if (result != null && result.files.single.bytes != null) {
+        final file = result.files.single;
 
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Cardápio salvo com sucesso!')),
-          );
-
-          // Limpar o formulário após salvar
-          _nomeController.clear();
-          _categoriaController.clear();
-          setState(() {
-            _dataSelecionada = null;
-            for (var produto in _produtos) {
-              produto['selecionado'] = false;
-            }
-          });
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Erro ao salvar cardápio: ${response.statusCode}'),
-            ),
-          );
+        // Validar tamanho do arquivo (máximo 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          _mostrarErro('A imagem deve ter no máximo 5MB');
+          return;
         }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar cardápio: $e')),
-        );
+
+        setState(() {
+          _imagemCardapio = file.bytes;
+          _nomeImagemCardapio = file.name;
+        });
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Preencha todos os campos e selecione a data')),
-      );
+    } catch (e) {
+      _mostrarErro('Erro ao selecionar imagem: $e');
     }
   }
 
-  void _mostrarImagem(dynamic imagem) {
-    if (imagem == null) return;
-
-    if (imagem is String) {
-      // imagem é URL
-      showDialog(
-        context: context,
-        builder:
-            (_) => AlertDialog(
-              content: Image.network(imagem),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Fechar'),
-                ),
-              ],
-            ),
-      );
-    } else if (imagem is Uint8List) {
-      // imagem é bytes (ex: carregada da memória)
-      showDialog(
-        context: context,
-        builder:
-            (_) => AlertDialog(
-              content: Image.memory(imagem),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Fechar'),
-                ),
-              ],
-            ),
-      );
-    } else {
-      // Outro tipo, pode só ignorar ou mostrar erro
-      print('Tipo de imagem desconhecido: ${imagem.runtimeType}');
+  Future<void> _salvarCardapio() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_dataSelecionada == null) {
+      _mostrarErro('Selecione uma data para o cardápio');
+      return;
     }
+    if (_produtosSelecionados.isEmpty) {
+      _mostrarErro('Selecione ao menos um produto');
+      return;
+    }
+
+    setState(() => _salvando = true);
+
+    try {
+      final cardapio = CardapioModel(
+        nome: _nomeController.text.trim(),
+        categoria: _categoriaController.text.trim(),
+        data: _dataSelecionada!.toIso8601String().split('T').first,
+        produtos: _produtosSelecionados,
+      );
+
+      final apiService = CardapioApiService();
+      final response = await apiService.criarCardapioComImagem(
+        cardapio,
+        _imagemCardapio,
+        _nomeImagemCardapio,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        _mostrarSucesso('Cardápio salvo com sucesso!');
+        _limparFormulario();
+      } else {
+        _mostrarErro('Erro ao salvar cardápio: ${response.statusCode}');
+      }
+    } catch (e) {
+      _mostrarErro('Erro ao salvar cardápio: $e');
+    } finally {
+      setState(() => _salvando = false);
+    }
+  }
+
+  void _limparFormulario() {
+    _nomeController.clear();
+    _categoriaController.clear();
+    setState(() {
+      _dataSelecionada = null;
+      _produtosSelecionados.clear();
+      _imagemCardapio = null;
+      _nomeImagemCardapio = null;
+    });
+  }
+
+  void _mostrarErro(String mensagem) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(mensagem),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _mostrarSucesso(String mensagem) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(mensagem),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Cadastro de Cardápio')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _nomeController,
-                decoration: InputDecoration(labelText: 'Nome do Cardápio'),
-                validator: (value) => value!.isEmpty ? 'Informe o nome' : null,
-              ),
-              TextFormField(
-                controller: _categoriaController,
-                decoration: InputDecoration(labelText: 'Categoria'),
-                validator:
-                    (value) => value!.isEmpty ? 'Informe a categoria' : null,
-              ),
-              SizedBox(height: 16),
-              Row(
-                children: [
-                  Text(
-                    _dataSelecionada == null
-                        ? 'Nenhuma data selecionada'
-                        : 'Data: ${_dataSelecionada!.day}/${_dataSelecionada!.month}/${_dataSelecionada!.year}',
-                  ),
-                  Spacer(),
-                  ElevatedButton(
-                    onPressed: () => _selecionarData(context),
-                    child: Text('Selecionar Data'),
-                  ),
-                ],
-              ),
-              SizedBox(height: 16),
-              Expanded(
-                child:
-                    _carregando
-                        ? Center(child: CircularProgressIndicator())
-                        : _produtos.isEmpty
-                        ? Center(child: Text('Nenhum produto encontrado.'))
-                        : ListView.builder(
-                          itemCount: _produtos.length,
-                          itemBuilder: (context, index) {
-                            final produto = _produtos[index];
-                            return Card(
-                              child: ListTile(
-                                leading: GestureDetector(
-                                  onTap:
-                                      () => _mostrarImagem(produto['imagem']),
-                                  child:
-                                      produto['imagem'] == null
-                                          ? Icon(Icons.image_not_supported)
-                                          : produto['imagem'] is String
-                                          ? Image.network(
-                                            produto['imagem'],
-                                            width: 50,
-                                            height: 50,
-                                            fit: BoxFit.cover,
-                                          )
-                                          : produto['imagem'] is Uint8List
-                                          ? Image.memory(
-                                            produto['imagem'],
-                                            width: 50,
-                                            height: 50,
-                                            fit: BoxFit.cover,
-                                          )
-                                          : Icon(Icons.error),
-                                ),
-                                title: Text(produto['nome']),
-                                subtitle: Text('R\$ ${produto['preco']}'),
-                                trailing: Checkbox(
-                                  value: produto['selecionado'],
-                                  onChanged: (value) {
-                                    setState(() {
-                                      produto['selecionado'] = value!;
-                                    });
-                                  },
-                                ),
-                                onTap: () => _escolherImagemWeb(index),
-                              ),
-                            );
-                          },
-                        ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  ElevatedButton(
-                    onPressed: _salvarCardapio,
-                    child: Text('Salvar Cardápio'),
-                  ),
-                  OutlinedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('Cancelar'),
-                  ),
-                ],
-              ),
-            ],
-          ),
+      appBar: AppBar(
+        title: const Text('Cadastro de Cardápio'),
+        backgroundColor: Colors.orange,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: _carregando ? _buildCarregando() : _buildFormulario(),
+    );
+  }
+
+  Widget _buildCarregando() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(),
+          SizedBox(height: 16),
+          Text('Carregando produtos...'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormulario() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildInformacoesBasicas(),
+            const SizedBox(height: 24),
+            _buildImagemCardapio(),
+            const SizedBox(height: 24),
+            _buildSelecaoProdutos(),
+            const SizedBox(height: 32),
+            _buildBotoes(),
+          ],
         ),
       ),
     );
   }
+
+  Widget _buildInformacoesBasicas() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Informações Básicas',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _nomeController,
+              decoration: const InputDecoration(
+                labelText: 'Nome do Cardápio',
+                hintText: 'Ex: Cardápio Especial de Sexta',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.restaurant_menu),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Informe o nome do cardápio';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _categoriaController,
+              decoration: const InputDecoration(
+                labelText: 'Categoria',
+                hintText: 'Ex: Almoço, Lanche, Jantar',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.category),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Informe a categoria';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            InkWell(
+              onTap: _selecionarData,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.calendar_today),
+                    const SizedBox(width: 12),
+                    Text(
+                      _dataSelecionada == null
+                          ? 'Selecionar Data'
+                          : 'Data: ${_formatarData(_dataSelecionada!)}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color:
+                            _dataSelecionada == null
+                                ? Colors.grey[600]
+                                : Colors.black,
+                      ),
+                    ),
+                    const Spacer(),
+                    const Icon(Icons.arrow_drop_down),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagemCardapio() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Imagem do Cardápio (Opcional)',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            InkWell(
+              onTap: _selecionarImagemCardapio,
+              child: Container(
+                width: double.infinity,
+                height: 200,
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Colors.grey,
+                    style: BorderStyle.solid,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.grey[50],
+                ),
+                child:
+                    _imagemCardapio != null
+                        ? Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.memory(
+                                _imagemCardapio!,
+                                width: double.infinity,
+                                height: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _imagemCardapio = null;
+                                    _nomeImagemCardapio = null;
+                                  });
+                                },
+                                icon: const Icon(Icons.close),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                        : const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_photo_alternate,
+                              size: 48,
+                              color: Colors.grey,
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Toque para adicionar uma imagem',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 16,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Máximo 5MB',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelecaoProdutos() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Text(
+                  'Produtos do Cardápio',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                Chip(
+                  label: Text('${_produtosSelecionados.length} selecionados'),
+                  backgroundColor: Colors.orange[100],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (_produtos.isEmpty)
+              const Center(
+                child: Text('Nenhum produto encontrado'),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _produtos.length,
+                itemBuilder: (context, index) {
+                  final produto = _produtos[index];
+                  final selecionado = _produtosSelecionados.contains(
+                    produto.id,
+                  );
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    color: selecionado ? Colors.orange[50] : null,
+                    child: CheckboxListTile(
+                      value: selecionado,
+                      onChanged: (value) {
+                        setState(() {
+                          if (value == true) {
+                            if (produto.id != null) {
+                              // Adiciona verificação de nulo
+                              _produtosSelecionados.add(
+                                produto.id!,
+                              ); // Usa ! para afirmar que não é nulo
+                            } else {
+                              _mostrarErro(
+                                "Produto sem ID não pode ser selecionado.",
+                              );
+                            }
+                          } else {
+                            _produtosSelecionados.remove(produto.id);
+                          }
+                        });
+                      },
+                      title: Text(
+                        produto.nome,
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      subtitle: Text("R\$ ${produto.preco.toStringAsFixed(2)}"),
+                      secondary:
+                          produto.imagemUrl != null
+                              ? ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: Image.network(
+                                  produto.imagemUrl!,
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (context, error, stackTrace) =>
+                                          const Icon(Icons.broken_image),
+                                ),
+                              )
+                              : const Icon(Icons.fastfood),
+                      activeColor: Colors.orange,
+                    ),
+                  );
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBotoes() {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: _salvando ? null : () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _salvando ? null : _salvarCardapio,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+            ),
+            child:
+                _salvando
+                    ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                    : const Text('Salvar Cardápio'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatarData(DateTime data) {
+    return '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}';
+  }
+
+  @override
+  void dispose() {
+    _nomeController.dispose();
+    _categoriaController.dispose();
+    super.dispose();
+  }
+}
+
+extension on ProdutoModel {
+  get imagemUrl => null;
 }

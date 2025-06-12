@@ -1,24 +1,22 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:unilanches/src/models/edit_prod_model.dart';
-import 'package:unilanches/src/models/list_prod_models.dart';
+import 'package:unilanches/src/models/produto_model.dart'; // Importe o ProdutoModel completo
 
 class ProdutoListApi {
   final String baseUrl = 'http://127.0.0.1:8000/api/produtos/';
 
-  Future<List<ProdutoListModel>> listarProdutos() async {
+  Future<List<ProdutoModel>> listarProdutos() async {
     final url = Uri.parse(baseUrl);
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       final List<dynamic> dados = jsonDecode(response.body);
-
-      // CORREÇÃO AQUI: convertendo cada item do JSON
-      return dados.map((json) => ProdutoListModel.fromJson(json)).toList();
+      // Mapeia cada item da lista dinâmica para um ProdutoModel
+      return dados
+          .map((json) => ProdutoModel.fromJson(json as Map<String, dynamic>))
+          .toList();
     } else {
-      throw Exception('Erro ao carregar produtos');
+      throw Exception('Erro ao carregar produtos: ${response.statusCode}');
     }
   }
-
-  Future<void> editarProduto(EditProdModel produtoEditado) async {}
 }

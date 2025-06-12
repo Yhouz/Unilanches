@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:unilanches/cliente/cardapioPage.dart';
 import 'package:unilanches/cliente/carteira.dart';
 
 class HomePageclient extends StatefulWidget {
@@ -171,63 +172,27 @@ class _HomePageclientState extends State<HomePageclient> {
                     const SizedBox(height: 20),
 
                     if (mostrarCardapio)
-                      Container(
-                        constraints: const BoxConstraints(
-                          maxWidth: 600, // largura máxima
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const CardapioClientePage(),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
                         ),
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: const [
-                            BoxShadow(
-                              blurRadius: 10,
-                              color: Color.fromRGBO(0, 0, 0, 0.5),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Cardápio',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.close),
-                                  onPressed: () {
-                                    setState(() {
-                                      mostrarCardapio = false;
-                                    });
-                                  },
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: produtos.length,
-                              itemBuilder: (context, index) {
-                                String nome = produtos.keys.elementAt(index);
-                                double preco = produtos[nome]!;
-                                return Card(
-                                  child: ListTile(
-                                    title: Text(nome),
-                                    subtitle: Text(
-                                      'R\$ ${preco.toStringAsFixed(2)}',
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
+                        child: const Text(
+                          'Ver Cardápio',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
 

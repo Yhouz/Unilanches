@@ -177,7 +177,7 @@ class _HomePageFuncionarioState extends State<HomePageFuncionario> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => CadastroCardapioPage(),
+                    builder: (context) => CadastroCardapioAprimoradoPage(),
                   ),
                 );
               },
