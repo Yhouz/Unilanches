@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:unilanches/src/models/list_prod_models.dart';
 import 'package:unilanches/src/services/list_prod.dart';
 import 'package:unilanches/src/models/edit_prod_model.dart';
+import '../src/models/produto_model.dart' show ProdutoModel;
 import '../src/services/delete_prod.dart';
 import '../src/services/edit_prod.dart';
 
@@ -13,7 +13,7 @@ class ListProd extends StatefulWidget {
 }
 
 class _ListProdState extends State<ListProd> {
-  List<ProdutoListModel> produtosApi = [];
+  List<ProdutoModel> produtosApi = [];
 
   @override
   void initState() {
@@ -25,27 +25,47 @@ class _ListProdState extends State<ListProd> {
     try {
       final lista = await ProdutoListApi().listarProdutos();
       setState(() {
-        produtosApi = lista.cast<ProdutoListModel>();
+        produtosApi = lista;
       });
     } catch (e) {
-      // print('Erro ao carregar produtos: $e');
+      // É uma boa prática logar o erro para depuração, mesmo que não seja exibido para o usuário
+      debugPrint('Erro ao carregar produtos: $e');
+      // Opcional: mostrar um SnackBar ou Dialog para o usuário sobre o erro
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao carregar produtos: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   Future<bool?> _editeButtom(
     BuildContext context,
     EditProdModel produto,
-    Function(EditProdModel) onSalvar,
+    // A função onSalvar não está sendo utilizada no onPressed do botão "Salvar".
+    // Se a intenção é que ela seja um callback após o sucesso da edição,
+    // você pode reintroduzi-la ou removê-la se não for mais necessária.
+    // Function(EditProdModel) onSalvar,
   ) {
     final nomeController = TextEditingController(text: produto.nome);
     final precoController = TextEditingController(
-      text: produto.preco.toString(),
+      text: produto.preco.toStringAsFixed(
+        2,
+      ), // Formata o preço para 2 casas decimais
+    );
+    final quantidadeEstoqueController = TextEditingController(
+      text:
+          produto.quantidadeEstoque
+              .toString(), // **CORREÇÃO AQUI: Inicializa com o valor atual**
     );
 
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
@@ -59,52 +79,84 @@ class _ListProdState extends State<ListProd> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
+              const Text(
                 'Editar Produto',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: nomeController,
-                decoration: InputDecoration(labelText: 'Nome'),
+                decoration: const InputDecoration(labelText: 'Nome'),
               ),
               TextField(
                 controller: precoController,
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(labelText: 'Preço'),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(labelText: 'Preço'),
+              ),
+              TextField(
+                controller:
+                    quantidadeEstoqueController, // Usando o controller correto
+                keyboardType:
+                    TextInputType
+                        .number, // Geralmente estoque é um número inteiro
+                decoration: const InputDecoration(
+                  labelText: 'Quantidade Estoque',
+                ),
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
                 onPressed: () async {
-                  final novoProduto = EditProdModel(
-                    id: produto.id,
-                    nome: nomeController.text,
-                    preco: double.parse(precoController.text),
-                  );
+                  // Validação básica para evitar erros de parsing com campos vazios
+                  if (nomeController.text.isEmpty ||
+                      precoController.text.isEmpty ||
+                      quantidadeEstoqueController.text.isEmpty) {
+                    // ignore: use_build_context_synchronously
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Por favor, preencha todos os campos.'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                    return; // Sai da função se houver campos vazios
+                  }
 
                   try {
-                    final resultado = await ProdutoEditApi().editProd(
+                    final double preco = double.parse(
+                      precoController.text.replaceAll(',', '.'),
+                    ); // Garante que a vírgula seja tratada como ponto decimal
+                    final int quantidadeEstoque = int.parse(
+                      quantidadeEstoqueController.text,
+                    );
+
+                    final novoProduto = EditProdModel(
+                      id: produto.id,
+                      nome: nomeController.text,
+                      preco: preco,
+                      quantidadeEstoque: quantidadeEstoque,
+                    );
+
+                    await ProdutoEditApi().editProd(
                       novoProduto,
                     );
 
-                    if (resultado != null) {
-                      await carregarProdutos();
+                    await carregarProdutos(); // Recarrega a lista após a edição
 
-                      Navigator.of(
-                        // ignore: use_build_context_synchronously
-                        context,
-                      ).pop(true); // Retorna true indicando sucesso
-                    } else {
-                      throw Exception('Resposta nula da API ao editar produto');
-                    }
+                    // ignore: use_build_context_synchronously
+                    Navigator.of(
+                      context,
+                    ).pop(true); // Retorna true indicando sucesso
                   } catch (e) {
+                    // ignore: use_build_context_synchronously
                     showDialog(
-                      // ignore: use_build_context_synchronously
                       context: context,
                       builder: (BuildContext context) {
                         return AlertDialog(
-                          title: const Text('Erro'),
-                          content: Text('Erro ao salvar: ${e.toString()}'),
+                          title: const Text('Erro ao salvar'),
+                          content: Text(
+                            'Não foi possível salvar o produto. Detalhes: ${e.toString()}',
+                          ),
                           actions: [
                             TextButton(
                               child: const Text('Fechar'),
@@ -118,8 +170,8 @@ class _ListProdState extends State<ListProd> {
                     );
                   }
                 },
-                icon: Icon(Icons.save),
-                label: Text('Salvar'),
+                icon: const Icon(Icons.save),
+                label: const Text('Salvar'),
               ),
             ],
           ),
@@ -137,10 +189,10 @@ class _ListProdState extends State<ListProd> {
         centerTitle: true,
       ),
       body:
-          produtosApi == Null
-              ? const Center(child: CircularProgressIndicator())
-              : produtosApi.isEmpty
-              ? const Center(child: CircularProgressIndicator())
+          produtosApi.isEmpty
+              ? const Center(
+                child: CircularProgressIndicator(),
+              ) // Mostra CircularProgressIndicator se a lista estiver vazia e ainda carregando
               : ListView.builder(
                 itemCount: produtosApi.length,
                 itemBuilder: (context, index) {
@@ -158,7 +210,7 @@ class _ListProdState extends State<ListProd> {
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       subtitle: Text(
-                        '${produto.descricao} - R\$ ${produto.preco.toStringAsFixed(2)}',
+                        '${produto.descricao} - R\$ ${produto.preco.toStringAsFixed(2)} | Estoque: ${produto.quantidadeEstoque}', // Adicionado Quantidade Estoque aqui também
                       ),
                       trailing: Wrap(
                         spacing: 8,
@@ -169,14 +221,15 @@ class _ListProdState extends State<ListProd> {
                               final mudou = await _editeButtom(
                                 context,
                                 EditProdModel(
-                                  id: produto.id,
+                                  id: produto.id!,
                                   nome: produto.nome,
                                   preco: produto.preco,
+                                  quantidadeEstoque: produto.quantidadeEstoque,
                                 ),
-                                (produtoEditado) async {},
+                                // A função onSalvar foi removida daqui, pois não é utilizada no `_editeButtom`
                               );
                               if (mudou == true) {
-                                await carregarProdutos();
+                                await carregarProdutos(); // Recarrega a lista se a edição foi bem-sucedida
                               }
                             },
                           ),
@@ -213,18 +266,27 @@ class _ListProdState extends State<ListProd> {
                               if (confirm == true) {
                                 try {
                                   await ProdDeletAPI().deletarProduto(
-                                    produto.id,
+                                    produto.id!,
                                   );
-                                  await carregarProdutos(); // Atualiza a lista
+                                  await carregarProdutos(); // Atualiza a lista após a exclusão
+                                  // ignore: use_build_context_synchronously
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Produto excluído com sucesso!',
+                                      ),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
                                 } catch (e) {
+                                  // ignore: use_build_context_synchronously
                                   showDialog(
-                                    // ignore: use_build_context_synchronously
                                     context: context,
                                     builder:
                                         (ctx) => AlertDialog(
-                                          title: const Text('Erro'),
+                                          title: const Text('Erro ao excluir'),
                                           content: Text(
-                                            'Erro ao excluir o produto: ${e.toString()}',
+                                            'Não foi possível excluir o produto: ${e.toString()}',
                                           ),
                                           actions: [
                                             TextButton(

@@ -2,16 +2,13 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-import 'package:unilanches/src/models/cardapio_model.dart'; // Certifique-se de que o caminho está correto
-import 'package:unilanches/src/models/produto_model.dart';
-
+import 'package:unilanches/src/models/produto_model.dart'; // Mantenha essa importação
 import '../models/cadastro_cardapio.dart'
-    show CardapioModel; // Certifique-se de que o caminho está correto
+    show CardapioModel; // Mantenha essa importação
 
 class CardapioApiService {
   static const String baseUrl = 'http://127.0.0.1:8000/api/cardapios/';
-  static const String produtosBaseUrl =
-      'http://127.0.0.1:8000/api/produtos/'; // Nova URL base para produtos
+  static const String produtosBaseUrl = 'http://127.0.0.1:8000/api/produtos/';
 
   // Buscar cardápio do dia
   Future<CardapioModel?> buscarCardapioDoDia() async {
@@ -20,21 +17,17 @@ class CardapioApiService {
       final response = await http.get(
         Uri.parse(
           "$baseUrl?data=$hoje",
-        ), // CORRIGIDO: Usando o endpoint de listagem com filtro de data
+        ),
         headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        // Assumindo que a API retorna uma lista de cardápios, mesmo que filtrada por data
         if (data is List && data.isNotEmpty) {
-          return CardapioModel.fromJson(
-            data[0],
-          ); // Pega o primeiro cardápio encontrado para a data
+          return CardapioModel.fromJson(data[0]);
         } else if (data is Map &&
             data['results'] is List &&
             data['results'].isNotEmpty) {
-          // Caso a API retorne um objeto com 'results' (como em DRF com paginação)
           return CardapioModel.fromJson(data['results'][0]);
         }
       }
@@ -43,6 +36,39 @@ class CardapioApiService {
       throw Exception('Erro ao buscar cardápio: $e');
     }
   }
+
+  // --- NOVO MÉTODO A SER INSERIDO AQUI ---
+  // Buscar cardápios por uma lista de IDs (para filtrar no frontend)
+  Future<List<CardapioModel>> buscarCardapiosPorIds(
+    List<int> cardapioIds,
+  ) async {
+    try {
+      if (cardapioIds.isEmpty) {
+        return []; // Retorna lista vazia se nenhum ID for fornecido
+      }
+      final idsString = cardapioIds.join(','); // Transforma [20, 19] em "20,19"
+      final response = await http.get(
+        Uri.parse(
+          '$baseUrl?ids=$idsString',
+        ), // Chama a API com o parâmetro de IDs
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> dados = json.decode(response.body);
+        // Mapeia os dados JSON para uma lista de CardapioModel
+        return dados
+            .map((json) => CardapioModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+      }
+      throw Exception(
+        'Erro ao carregar cardápios por IDs: ${response.statusCode}',
+      );
+    } catch (e) {
+      throw Exception('Erro ao buscar cardápios por IDs: $e');
+    }
+  }
+  // --- FIM DO NOVO MÉTODO ---
 
   // Buscar produtos do cardápio (movido para usar produtosBaseUrl)
   Future<List<ProdutoModel>> buscarProdutosDoCardapio(
@@ -53,13 +79,12 @@ class CardapioApiService {
       final response = await http.get(
         Uri.parse(
           '$produtosBaseUrl?ids=$idsString',
-        ), // CORRIGIDO: Usando a URL base de produtos
+        ),
         headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
         final List<dynamic> dados = json.decode(response.body);
-        // Assumindo que a API de produtos retorna uma lista direta de produtos
         return dados
             .map((json) => ProdutoModel.fromJson(json as Map<String, dynamic>))
             .toList();

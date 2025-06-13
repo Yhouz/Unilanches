@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
-
 import '../src/models/cadastro_cardapio.dart' show CardapioModel;
 import '../src/models/produto_model.dart' show ProdutoModel;
 import '../src/services/cadastro_cardapio.dart' show CardapioApiService;
@@ -23,7 +22,7 @@ class _CadastroCardapioAprimoradoPageState
   DateTime? _dataSelecionada;
 
   List<ProdutoModel> _produtos = [];
-  List<int> _produtosSelecionados = [];
+  List<int> produtosSelecionados = [];
   Uint8List? _imagemCardapio;
   String? _nomeImagemCardapio;
   bool _carregando = true;
@@ -40,19 +39,29 @@ class _CadastroCardapioAprimoradoPageState
       setState(() => _carregando = true);
       print("Tentando carregar produtos...");
       final produtosApi = await ProdutoListApi().listarProdutos();
-      print("Produtos recebidos da API: ${produtosApi.length} produtos");
+
+      print("Verificando IDs dos produtos carregados:");
+      Set<int?> uniqueIds = {};
       for (var produto in produtosApi) {
-        print("Produto: ${produto.nome} (ID: ${produto.id})");
+        print("  Produto: ${produto.nome} (ID: ${produto.id})");
+        if (produto.id != null) {
+          if (!uniqueIds.add(produto.id!)) {
+            print("  *** ALERTA: ID DUPLICADO ENCONTRADO: ${produto.id} ***");
+          }
+        } else {
+          print("  *** ALERTA: PRODUTO COM ID NULO: ${produto.nome} ***");
+        }
       }
+      print(
+        "Total de produtos carregados: ${produtosApi.length}, Total de IDs únicos: ${uniqueIds.length}",
+      );
 
       setState(() {
         _produtos = produtosApi;
         _carregando = false;
       });
     } catch (e) {
-      setState(() => _carregando = false);
-      _mostrarErro("Erro ao carregar produtos: $e");
-      print("Erro ao carregar produtos: $e");
+      // ...
     }
   }
 
@@ -103,7 +112,7 @@ class _CadastroCardapioAprimoradoPageState
       _mostrarErro('Selecione uma data para o cardápio');
       return;
     }
-    if (_produtosSelecionados.isEmpty) {
+    if (produtosSelecionados.isEmpty) {
       _mostrarErro('Selecione ao menos um produto');
       return;
     }
@@ -115,7 +124,7 @@ class _CadastroCardapioAprimoradoPageState
         nome: _nomeController.text.trim(),
         categoria: _categoriaController.text.trim(),
         data: _dataSelecionada!.toIso8601String().split('T').first,
-        produtos: _produtosSelecionados,
+        produtos: produtosSelecionados,
       );
 
       final apiService = CardapioApiService();
@@ -143,7 +152,7 @@ class _CadastroCardapioAprimoradoPageState
     _categoriaController.clear();
     setState(() {
       _dataSelecionada = null;
-      _produtosSelecionados.clear();
+      produtosSelecionados.clear();
       _imagemCardapio = null;
       _nomeImagemCardapio = null;
     });
@@ -411,7 +420,7 @@ class _CadastroCardapioAprimoradoPageState
                 ),
                 const Spacer(),
                 Chip(
-                  label: Text('${_produtosSelecionados.length} selecionados'),
+                  label: Text('${produtosSelecionados.length} selecionados'),
                   backgroundColor: Colors.orange[100],
                 ),
               ],
@@ -428,11 +437,15 @@ class _CadastroCardapioAprimoradoPageState
                 itemCount: _produtos.length,
                 itemBuilder: (context, index) {
                   final produto = _produtos[index];
-                  final selecionado = _produtosSelecionados.contains(
+                  final selecionado = produtosSelecionados.contains(
                     produto.id,
                   );
+                  if (produto.id == null) {
+                    return const SizedBox.shrink(); // Ou um Text('Produto sem ID válido')
+                  }
 
                   return Card(
+                    key: ValueKey(produto.id),
                     margin: const EdgeInsets.only(bottom: 8),
                     color: selecionado ? Colors.orange[50] : null,
                     child: CheckboxListTile(
@@ -442,7 +455,7 @@ class _CadastroCardapioAprimoradoPageState
                           if (value == true) {
                             if (produto.id != null) {
                               // Adiciona verificação de nulo
-                              _produtosSelecionados.add(
+                              produtosSelecionados.add(
                                 produto.id!,
                               ); // Usa ! para afirmar que não é nulo
                             } else {
@@ -451,7 +464,7 @@ class _CadastroCardapioAprimoradoPageState
                               );
                             }
                           } else {
-                            _produtosSelecionados.remove(produto.id);
+                            produtosSelecionados.remove(produto.id);
                           }
                         });
                       },
@@ -459,7 +472,9 @@ class _CadastroCardapioAprimoradoPageState
                         produto.nome,
                         style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
-                      subtitle: Text("R\$ ${produto.preco.toStringAsFixed(2)}"),
+                      subtitle: Text(
+                        "R\$ ${produto.preco.toStringAsFixed(2)} | Estoque: ${produto.quantidadeEstoque}",
+                      ),
                       secondary:
                           produto.imagemUrl != null
                               ? ClipRRect(

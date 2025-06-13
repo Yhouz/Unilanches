@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../src/models/cadastro_cardapio.dart' show CardapioModel;
 import '../src/models/produto_model.dart' show ProdutoModel;
 import '../src/services/cadastro_cardapio.dart' show CardapioApiService;
+import 'carrinhoCliente.dart' show CarrinhoPage, CartScreenState, CartScreen;
 
 class CardapioClientePage extends StatefulWidget {
   const CardapioClientePage({super.key});
@@ -13,9 +14,10 @@ class CardapioClientePage extends StatefulWidget {
 
 class _CardapioClientePageState extends State<CardapioClientePage> {
   CardapioModel? cardapioAtual;
-  List<ProdutoModel> produtos = [];
+  // List<ProdutoModel> produtos = [];
   bool carregando = true;
   String? erro;
+  List<ProdutoModel> produtosSelecionados = [];
 
   @override
   void initState() {
@@ -40,7 +42,7 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
 
         setState(() {
           cardapioAtual = cardapio;
-          produtos = produtosCardapio;
+          produtosSelecionados = produtosCardapio;
           carregando = false;
         });
       } else {
@@ -68,6 +70,22 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _carregarCardapioDoDia,
+          ),
+          TextButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => CartScreen()),
+              );
+            },
+            icon: Icon(
+              Icons.shopping_cart,
+              color: Colors.white,
+            ),
+            label: Text(
+              'Ir ao Carrinho',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -181,7 +199,7 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
   }
 
   Widget _buildProdutosList() {
-    if (produtos.isEmpty) {
+    if (produtosSelecionados.isEmpty) {
       return const Center(
         child: Text(
           'Nenhum produto disponível',
@@ -204,9 +222,9 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
         ListView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: produtos.length,
+          itemCount: produtosSelecionados.length,
           itemBuilder: (context, index) {
-            return _buildProdutoCard(produtos[index]);
+            return _buildProdutoCard(produtosSelecionados[index]);
           },
         ),
       ],
@@ -290,6 +308,18 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
                         color: Colors.green[700],
                       ),
                     ),
+                    // Verifica se o campo existe no modelo
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        'Estoque: ${produto.quantidadeEstoque}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.blueGrey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -334,6 +364,7 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
                   ),
                   const SizedBox(height: 16),
                 ],
+
                 Text(
                   'Preço: R\$ ${produto.preco.toStringAsFixed(2)}',
                   style: const TextStyle(
@@ -362,11 +393,22 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
 
   void _adicionarAoCarrinho(ProdutoModel produto) {
     // Implementar lógica do carrinho
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${produto.nome} adicionado ao carrinho!'),
-        backgroundColor: Colors.green,
-      ),
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Produto Adicionado!'),
+          content: Text('${produto.nome} foi adicionado ao seu carrinho.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Fecha o diálogo
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 

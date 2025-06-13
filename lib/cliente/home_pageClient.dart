@@ -103,9 +103,13 @@ class _HomePageclientState extends State<HomePageclient> {
                       children: [
                         ElevatedButton(
                           onPressed: () {
-                            setState(() {
-                              mostrarCardapio = !mostrarCardapio;
-                            });
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => const CardapioClientePage(),
+                              ),
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
@@ -114,9 +118,7 @@ class _HomePageclientState extends State<HomePageclient> {
                             ),
                           ),
                           child: Text(
-                            mostrarCardapio
-                                ? 'Ocultar Cardápio'
-                                : 'Ver Cardápio',
+                            'Ver Cardápio',
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -170,31 +172,6 @@ class _HomePageclientState extends State<HomePageclient> {
                       ),
                     ),
                     const SizedBox(height: 20),
-
-                    if (mostrarCardapio)
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const CardapioClientePage(),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                        ),
-                        child: const Text(
-                          'Ver Cardápio',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
 
                     if (reservar)
                       Container(

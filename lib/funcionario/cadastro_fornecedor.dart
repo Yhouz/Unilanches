@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:unilanches/src/services/cadastro_fornecedor.dart';
 import 'package:unilanches/src/models/cadastro_fornecedor_model.dart';
+import 'package:flutter/services.dart'; // Import for FilteringTextInputFormatter
 
 class UF {
   String sigla;
@@ -25,12 +26,12 @@ class _CadastroFornecedorState extends State<CadastroFornecedor> {
   final TextEditingController celularController = TextEditingController();
   final TextEditingController enderecoController = TextEditingController();
   final TextEditingController cidadeController = TextEditingController();
-  final TextEditingController estadoController = TextEditingController();
   final TextEditingController cepController = TextEditingController();
   final TextEditingController contatoController = TextEditingController();
   final TextEditingController observacoesController = TextEditingController();
 
   bool ativo = true;
+  bool _isLoading = false; // To manage loading state for the button
 
   final List<UF> ufs = [
     UF(sigla: 'AC'),
@@ -64,10 +65,29 @@ class _CadastroFornecedorState extends State<CadastroFornecedor> {
 
   UF? ufSelecionada;
 
+  @override
+  void dispose() {
+    nomeController.dispose();
+    cnpjController.dispose();
+    emailController.dispose();
+    telefoneController.dispose();
+    celularController.dispose();
+    enderecoController.dispose();
+    cidadeController.dispose();
+    cepController.dispose();
+    contatoController.dispose();
+    observacoesController.dispose();
+    super.dispose();
+  }
+
   Future<void> _cadastroFornecedor() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+
+    setState(() {
+      _isLoading = true; // Show loading indicator
+    });
 
     final fornecedor = CadastrarFornecedorModel(
       nome: nomeController.text,
@@ -90,24 +110,36 @@ class _CadastroFornecedorState extends State<CadastroFornecedor> {
       final fornecedorCriado = await api.cadastrarFornecedor(fornecedor);
 
       if (fornecedorCriado != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Fornecedor cadastrado com sucesso!')),
-        );
-        // Opcional: limpar campos ou navegar para outra tela
-        _formKey.currentState!.reset();
-        setState(() {
-          ufSelecionada = null;
-          ativo = true;
-        });
+        if (mounted) {
+          // Check if the widget is still in the tree
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Fornecedor cadastrado com sucesso!')),
+          );
+          _formKey.currentState!.reset();
+          setState(() {
+            ufSelecionada = null;
+            ativo = true;
+          });
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Falha ao cadastrar fornecedor')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Falha ao cadastrar fornecedor')),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao cadastrar fornecedor: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao cadastrar fornecedor: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false; // Hide loading indicator
+        });
+      }
     }
   }
 
@@ -115,24 +147,32 @@ class _CadastroFornecedorState extends State<CadastroFornecedor> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cadastro de Fornecedor'),
+        title: const Text(
+          'Cadastro de Fornecedor',
+          style: TextStyle(color: Colors.white),
+        ), // Text color for contrast
         centerTitle: true,
         backgroundColor: const Color.fromARGB(255, 3, 127, 243),
+        iconTheme: const IconThemeData(
+          color: Colors.white,
+        ), // Icon color for back button
         actions: [
           TextButton.icon(
             onPressed: () {
               // Navigator.push(
-              //    context,
-              //   MaterialPageRoute(builder: (context) => ListProd()),
-              //  );
+              //    context,
+              //   MaterialPageRoute(builder: (context) => ListProd()),
+              //  );
             },
-            icon: Icon(
+            icon: const Icon(
               Icons.search,
-              color: Colors.black,
+              color: Colors.white, // Changed to white for better contrast
             ),
-            label: Text(
-              'Consutar Fornecedor',
-              style: TextStyle(color: Colors.black),
+            label: const Text(
+              'Consultar Fornecedor',
+              style: TextStyle(
+                color: Colors.white,
+              ), // Changed to white for better contrast
             ),
           ),
         ],
@@ -144,7 +184,15 @@ class _CadastroFornecedorState extends State<CadastroFornecedor> {
           child: Column(
             children: [
               _buildTextField(nomeController, 'Nome', Icons.business, true),
-              _buildTextField(cnpjController, 'CNPJ', Icons.badge, true),
+              _buildTextField(
+                cnpjController,
+                'CNPJ',
+                Icons.badge,
+                true,
+                inputType: TextInputType.number,
+                inputFormatters: [_cnpjFormatter], // Apply CNPJ formatter
+                maxLength: 18, // Max length for formatted CNPJ
+              ),
               _buildTextField(
                 emailController,
                 'Email',
@@ -157,12 +205,31 @@ class _CadastroFornecedorState extends State<CadastroFornecedor> {
                 'Telefone',
                 Icons.phone,
                 false,
+                inputType: TextInputType.phone,
+                inputFormatters: [
+                  _phoneFormatter,
+                ], // Optional: Apply phone formatter
+                maxLength: 15, // Max length for formatted phone
               ),
               _buildTextField(
                 celularController,
                 'Celular',
                 Icons.phone_android,
                 false,
+                inputType: TextInputType.phone,
+                inputFormatters: [
+                  _cellPhoneFormatter,
+                ], // Optional: Apply cellphone formatter
+                maxLength: 16, // Max length for formatted cellphone
+              ),
+              const SizedBox(height: 16), // Add some space before address group
+              const Divider(), // Visual separator
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: Text(
+                  'Endereço',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
               _buildTextField(
                 enderecoController,
@@ -176,32 +243,48 @@ class _CadastroFornecedorState extends State<CadastroFornecedor> {
                 Icons.location_city,
                 false,
               ),
-              DropdownButtonFormField<UF>(
-                decoration: const InputDecoration(
-                  labelText: 'UF',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.location_on),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: DropdownButtonFormField<UF>(
+                  decoration: const InputDecoration(
+                    labelText: 'UF',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.location_on),
+                  ),
+                  value: ufSelecionada,
+                  items:
+                      ufs.map((estado) {
+                        return DropdownMenuItem<UF>(
+                          value: estado,
+                          child: Text(estado.sigla),
+                        );
+                      }).toList(),
+                  onChanged: (novaUF) {
+                    setState(() {
+                      ufSelecionada = novaUF;
+                    });
+                  },
+                  validator:
+                      (valor) => valor == null ? 'Selecione uma UF' : null,
                 ),
-                value: ufSelecionada,
-                items:
-                    ufs.map((estado) {
-                      return DropdownMenuItem<UF>(
-                        value: estado,
-                        child: Text(estado.sigla),
-                      );
-                    }).toList(),
-                onChanged: (novaUF) {
-                  setState(() {
-                    ufSelecionada = novaUF;
-                  });
-                },
-                validator: (valor) => valor == null ? 'Selecione uma UF' : null,
               ),
               _buildTextField(
                 cepController,
                 'CEP',
                 Icons.markunread_mailbox,
                 false,
+                inputType: TextInputType.number,
+                inputFormatters: [_cepFormatter], // Apply CEP formatter
+                maxLength: 9, // Max length for formatted CEP
+              ),
+              const SizedBox(height: 16), // Add some space
+              const Divider(), // Visual separator
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: Text(
+                  'Dados Adicionais',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
               _buildTextField(
                 contatoController,
@@ -226,15 +309,38 @@ class _CadastroFornecedorState extends State<CadastroFornecedor> {
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
-                onPressed: () async {
-                  if (_formKey.currentState!.validate()) {
-                    await _cadastroFornecedor();
-                    // Aqui você pode salvar ou enviar os dados
-                  }
-                },
-
-                label: const Text('Cadastar'),
-                style: ElevatedButton.styleFrom(),
+                onPressed:
+                    _isLoading
+                        ? null // Disable button when loading
+                        : () async {
+                          if (_formKey.currentState!.validate()) {
+                            await _cadastroFornecedor();
+                          }
+                        },
+                label:
+                    _isLoading
+                        ? const CircularProgressIndicator(
+                          color: Colors.white,
+                        ) // Show loading indicator
+                        : const Text('Cadastrar'),
+                icon: const Icon(Icons.save), // Icon for save
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(
+                    255,
+                    3,
+                    127,
+                    243,
+                  ), // Primary color for button
+                  foregroundColor: Colors.white, // Text color for button
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 15,
+                  ),
+                  textStyle: const TextStyle(fontSize: 18),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
               ),
             ],
           ),
@@ -250,6 +356,7 @@ class _CadastroFornecedorState extends State<CadastroFornecedor> {
     bool required, {
     TextInputType inputType = TextInputType.text,
     int? maxLength,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -257,10 +364,12 @@ class _CadastroFornecedorState extends State<CadastroFornecedor> {
         controller: controller,
         keyboardType: inputType,
         maxLength: maxLength,
+        inputFormatters: inputFormatters,
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon),
           border: const OutlineInputBorder(),
+          counterText: "", // Hide the default character counter
         ),
         validator:
             required
@@ -294,4 +403,18 @@ class _CadastroFornecedorState extends State<CadastroFornecedor> {
       ),
     );
   }
+
+  // Input Formatters
+  final FilteringTextInputFormatter _cnpjFormatter =
+      FilteringTextInputFormatter.allow(RegExp(r'[0-9\.\-/]'));
+  final FilteringTextInputFormatter _cepFormatter =
+      FilteringTextInputFormatter.allow(RegExp(r'[0-9\-]'));
+  final FilteringTextInputFormatter _phoneFormatter =
+      FilteringTextInputFormatter.allow(RegExp(r'[0-9\(\)\- ]'));
+  final FilteringTextInputFormatter _cellPhoneFormatter =
+      FilteringTextInputFormatter.allow(RegExp(r'[0-9\(\)\- ]'));
+
+  // You might want to implement more sophisticated formatters if needed
+  // For example, to automatically add dots/dashes as the user types
+  // using custom TextInputFormatter extending TextInputFormatter.
 }

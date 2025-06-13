@@ -98,13 +98,22 @@ class _CadastroFuncionarioState extends State<CadastroFuncionario> {
         email.text.isEmpty ||
         cpf.text.isEmpty ||
         telefone.text.isEmpty ||
-        senha.text.isEmpty) {
+        senha.text.isEmpty ||
+        cargoSelecionado == null ||
+        dtAdmissao.text.isEmpty ||
+        dtNascimento.text.isEmpty ||
+        salario.text.isEmpty ||
+        endereco.text.isEmpty ||
+        numero.text.isEmpty ||
+        ufSelecionada == null ||
+        cidade.text.isEmpty) {
+      if (!mounted) return;
       showDialog(
         context: context,
         builder:
             (context) => AlertDialog(
               title: const Text('Erro no Cadastro'),
-              content: const Text('Preencha todos os campos!'),
+              content: const Text('Preencha todos os campos obrigatórios!'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
@@ -128,7 +137,7 @@ class _CadastroFuncionarioState extends State<CadastroFuncionario> {
         telefone.text,
         senha.text,
         cargoSelecionado!.nome,
-        'Funcionario',
+        'Funcionario', // Assuming this is a fixed role
         dtAdmissao.text,
         dtNascimento.text,
         salario.text,
@@ -190,6 +199,23 @@ class _CadastroFuncionarioState extends State<CadastroFuncionario> {
       initialDate: DateTime.now(),
       firstDate: DateTime(1900),
       lastDate: DateTime(2100),
+      helpText: 'Selecione a Data',
+      cancelText: 'Cancelar',
+      confirmText: 'Confirmar',
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            primaryColor: const Color.fromARGB(255, 3, 127, 243),
+            colorScheme: const ColorScheme.light(
+              primary: Color.fromARGB(255, 3, 127, 243),
+            ),
+            buttonTheme: const ButtonThemeData(
+              textTheme: ButtonTextTheme.primary,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (dataSelecionada != null) {
@@ -202,211 +228,276 @@ class _CadastroFuncionarioState extends State<CadastroFuncionario> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Registrar Funcionário'),
-          centerTitle: true,
-          backgroundColor: const Color.fromARGB(255, 3, 127, 243),
-          actions: [
-            TextButton.icon(
-              onPressed: () {
-                // Navigator.push(
-                // context,
-                // MaterialPageRoute(builder: (context) => ()),
-                //);
-              },
-              icon: Icon(
-                Icons.search,
-                color: Colors.black,
-              ),
-              label: Text(
-                'Consutar Funcionario',
-                style: TextStyle(color: Colors.black),
-              ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Registrar Funcionário'),
+        centerTitle: true,
+        backgroundColor: const Color.fromARGB(255, 3, 127, 243),
+        foregroundColor: Colors.white,
+        actions: [
+          TextButton.icon(
+            onPressed: () {},
+            icon: const Icon(
+              Icons.search,
+              color: Colors.white,
             ),
-          ],
-        ),
-        body: Center(
-          child: SingleChildScrollView(
-            child: Container(
-              // width: 400,
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    campoTexto('Nome', Icons.person, nome, focoNome, focoEmail),
-                    const SizedBox(height: 20),
-                    campoTexto(
-                      'Email',
-                      Icons.email,
-                      email,
-                      focoEmail,
-                      focoCpf,
-                      tipoTeclado: TextInputType.emailAddress,
+            label: const Text(
+              'Consultar Funcionário',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: 600,
+            ), // Max width for larger screens
+            child: Form(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  /// Personal Information Section
+                  const Text(
+                    'Dados Pessoais',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color.fromARGB(255, 3, 127, 243),
                     ),
-                    const SizedBox(height: 20),
-                    campoTexto(
-                      'CPF',
-                      Icons.credit_card,
-                      cpf,
-                      focoCpf,
-                      focoTelefone,
-                      tipoTeclado: TextInputType.number,
-                    ),
-                    const SizedBox(height: 20),
-                    campoTexto(
-                      'Telefone',
-                      Icons.phone,
-                      telefone,
-                      focoTelefone,
-                      focoSenha,
-                      tipoTeclado: TextInputType.phone,
-                    ),
-                    const SizedBox(height: 20),
-                    campoTexto(
-                      'Senha',
-                      Icons.lock,
-                      senha,
-                      focoSenha,
-                      focoCargo,
-                      ocultarTexto: true,
-                      tipoTeclado: TextInputType.visiblePassword,
-                    ),
-                    const SizedBox(height: 20),
-
-                    DropdownButtonFormField<Cargo>(
-                      decoration: const InputDecoration(
-                        labelText: 'Cargo',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.work),
-                      ),
-                      value: cargoSelecionado,
-                      items:
-                          cargos.map((cargo) {
-                            return DropdownMenuItem<Cargo>(
-                              value: cargo,
-                              child: Text(cargo.nome),
-                            );
-                          }).toList(),
-                      onChanged: (novoCargo) {
-                        setState(() {
-                          cargoSelecionado = novoCargo;
-                        });
-                      },
-                      validator:
-                          (valor) =>
-                              valor == null ? 'Selecione um cargo' : null,
-                    ),
-                    const SizedBox(height: 20),
-
-                    campoTexto(
-                      'Salário (Reais)',
-                      Icons.attach_money,
-                      salario,
-                      focoSalario,
-                      focoEndereco,
-                      tipoTeclado: TextInputType.number,
-                    ),
-                    const SizedBox(height: 20),
-
-                    campoTexto(
-                      'Endereço',
-                      Icons.home,
-                      endereco,
-                      focoEndereco,
-                      focoNumero,
-                    ),
-                    const SizedBox(height: 20),
-
-                    campoTexto(
-                      'Número',
-                      Icons.pin,
-                      numero,
-                      focoNumero,
-                      focoCidade,
-                      tipoTeclado: TextInputType.number,
-                    ),
-                    const SizedBox(height: 20),
-
-                    campoTexto(
-                      'Cidade',
-                      Icons.location_city,
-                      cidade,
-                      focoCidade,
-                      focoUF,
-                    ),
-                    const SizedBox(height: 20),
-
-                    DropdownButtonFormField<UF>(
-                      decoration: const InputDecoration(
-                        labelText: 'UF',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.location_on),
-                      ),
-                      value: ufSelecionada,
-                      items:
-                          ufs.map((estado) {
-                            return DropdownMenuItem<UF>(
-                              value: estado,
-                              child: Text(estado.sigla),
-                            );
-                          }).toList(),
-                      onChanged: (novaUF) {
-                        setState(() {
-                          ufSelecionada = novaUF;
-                        });
-                      },
-                      validator:
-                          (valor) => valor == null ? 'Selecione uma UF' : null,
-                    ),
-                    const SizedBox(height: 20),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: dtAdmissao,
-                            readOnly: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Data de Admissão',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.calendar_today),
-                            ),
-                            onTap: () => _selecionarData(context, dtAdmissao),
-                          ),
+                  ),
+                  const Divider(color: Color.fromARGB(255, 3, 127, 243)),
+                  const SizedBox(height: 16),
+                  campoTexto(
+                    'Nome Completo',
+                    Icons.person,
+                    nome,
+                    focoNome,
+                    focoEmail,
+                  ),
+                  const SizedBox(height: 16),
+                  campoTexto(
+                    'Email',
+                    Icons.email,
+                    email,
+                    focoEmail,
+                    focoCpf,
+                    tipoTeclado: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: campoTexto(
+                          'CPF',
+                          Icons.credit_card,
+                          cpf,
+                          focoCpf,
+                          focoTelefone,
+                          tipoTeclado: TextInputType.number,
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: TextFormField(
-                            controller: dtNascimento,
-                            readOnly: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Data de Nascimento',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.calendar_month),
-                            ),
-                            onTap: () => _selecionarData(context, dtNascimento),
-                          ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: campoTexto(
+                          'Telefone',
+                          Icons.phone,
+                          telefone,
+                          focoTelefone,
+                          focoSenha,
+                          tipoTeclado: TextInputType.phone,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  campoTexto(
+                    'Senha',
+                    Icons.lock,
+                    senha,
+                    focoSenha,
+                    focoCargo,
+                    ocultarTexto: true,
+                    tipoTeclado: TextInputType.visiblePassword,
+                  ),
+                  const SizedBox(height: 32),
 
-                    ElevatedButton(
-                      onPressed: () async {
-                        await cadastroFunc(ufSelecionada);
-                      },
-                      child:
-                          _isCadastroFunc
-                              ? const CircularProgressIndicator(
+                  /// Job Information Section
+                  const Text(
+                    'Dados Profissionais',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color.fromARGB(255, 3, 127, 243),
+                    ),
+                  ),
+                  const Divider(color: Color.fromARGB(255, 3, 127, 243)),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<Cargo>(
+                    decoration: const InputDecoration(
+                      labelText: 'Cargo',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.work),
+                    ),
+                    value: cargoSelecionado,
+                    items:
+                        cargos.map((cargo) {
+                          return DropdownMenuItem<Cargo>(
+                            value: cargo,
+                            child: Text(cargo.nome),
+                          );
+                        }).toList(),
+                    onChanged: (novoCargo) {
+                      setState(() {
+                        cargoSelecionado = novoCargo;
+                      });
+                    },
+                    validator:
+                        (valor) => valor == null ? 'Selecione um cargo' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  campoTexto(
+                    'Salário (R\$)',
+                    Icons.attach_money,
+                    salario,
+                    focoSalario,
+                    focoEndereco,
+                    tipoTeclado: TextInputType.number,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: dtAdmissao,
+                          readOnly: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Data de Admissão',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.calendar_today),
+                          ),
+                          onTap: () => _selecionarData(context, dtAdmissao),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: dtNascimento,
+                          readOnly: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Data de Nascimento',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.calendar_month),
+                          ),
+                          onTap: () => _selecionarData(context, dtNascimento),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+
+                  /// Address Information Section
+                  const Text(
+                    'Endereço',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color.fromARGB(255, 3, 127, 243),
+                    ),
+                  ),
+                  const Divider(color: Color.fromARGB(255, 3, 127, 243)),
+                  const SizedBox(height: 16),
+                  campoTexto(
+                    'Endereço',
+                    Icons.home,
+                    endereco,
+                    focoEndereco,
+                    focoNumero,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: campoTexto(
+                          'Número',
+                          Icons.pin,
+                          numero,
+                          focoNumero,
+                          focoCidade,
+                          tipoTeclado: TextInputType.number,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        flex: 3,
+                        child: campoTexto(
+                          'Cidade',
+                          Icons.location_city,
+                          cidade,
+                          focoCidade,
+                          focoUF,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<UF>(
+                    decoration: const InputDecoration(
+                      labelText: 'Estado (UF)',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.location_on),
+                    ),
+                    value: ufSelecionada,
+                    items:
+                        ufs.map((estado) {
+                          return DropdownMenuItem<UF>(
+                            value: estado,
+                            child: Text(estado.sigla),
+                          );
+                        }).toList(),
+                    onChanged: (novaUF) {
+                      setState(() {
+                        ufSelecionada = novaUF;
+                      });
+                    },
+                    validator:
+                        (valor) => valor == null ? 'Selecione um estado' : null,
+                  ),
+                  const SizedBox(height: 32),
+
+                  /// Registration Button
+                  ElevatedButton(
+                    onPressed:
+                        _isCadastroFunc
+                            ? null
+                            : () async {
+                              // You might want to add form validation here before calling cadastroFunc
+                              await cadastroFunc(ufSelecionada);
+                            },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 3, 127, 243),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child:
+                        _isCadastroFunc
+                            ? const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                            : const Text(
+                              'Cadastrar Funcionário',
+                              style: TextStyle(
+                                fontSize: 18,
                                 color: Colors.white,
-                              )
-                              : const Text('Cadastrar'),
-                    ),
-                  ],
-                ),
+                              ),
+                            ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -429,6 +520,8 @@ class _CadastroFuncionarioState extends State<CadastroFuncionario> {
         labelText: label,
         border: const OutlineInputBorder(),
         prefixIcon: Icon(icone),
+        floatingLabelBehavior:
+            FloatingLabelBehavior.auto, // Ensures label moves when focused
       ),
       controller: controller,
       focusNode: focoAtual,
@@ -438,8 +531,15 @@ class _CadastroFuncionarioState extends State<CadastroFuncionario> {
         if (focoProximo != null) {
           FocusScope.of(context).requestFocus(focoProximo);
         } else {
-          FocusScope.of(context).unfocus();
+          focoAtual.unfocus(); // Unfocus the current field
         }
+      },
+      // Basic validation: checks if the field is empty
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Este campo é obrigatório';
+        }
+        return null;
       },
     );
   }

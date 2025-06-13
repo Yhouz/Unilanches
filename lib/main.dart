@@ -19,10 +19,9 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      // ESTA É A LINHA QUE PRECISA ESTAR CORRETA:
+
       supportedLocales: const [
-        Locale('pt', 'BR'), // Português do Brasil
-        // Adicione outras localidades que seu app suportar, se houver
+        Locale('pt', 'BR'),
       ],
       theme: ThemeData(
         primarySwatch: Colors.lightBlue,

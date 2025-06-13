@@ -16,13 +16,43 @@ class HomePageFuncionario extends StatefulWidget {
 }
 
 class _HomePageFuncionarioState extends State<HomePageFuncionario> {
+  // Função auxiliar para criar os botões e evitar repetição de código
+  Widget _buildGridButton({
+    required VoidCallback onPressed,
+    required IconData icon,
+    required String label,
+  }) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blue[600],
+        padding: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      onPressed: onPressed,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 36, color: Colors.white),
+          const SizedBox(height: 10),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white, fontSize: 30),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           'Tela Funcionário',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         centerTitle: true,
         backgroundColor: const Color.fromARGB(255, 3, 127, 243),
@@ -46,19 +76,13 @@ class _HomePageFuncionarioState extends State<HomePageFuncionario> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: GridView.count(
-          crossAxisCount: 2,
+        // AQUI ESTÁ A MUDANÇA PARA DEIXAR O LAYOUT RESPONSIVO
+        child: GridView.extent(
+          maxCrossAxisExtent: 250.0, // Define a largura máxima de cada item
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
           children: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[600],
-                padding: const EdgeInsets.all(16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+            _buildGridButton(
               onPressed: () {
                 Navigator.push(
                   context,
@@ -67,27 +91,10 @@ class _HomePageFuncionarioState extends State<HomePageFuncionario> {
                   ),
                 );
               },
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.person_add, size: 36, color: Colors.white),
-                  SizedBox(height: 10),
-                  Text(
-                    'Cadastro Funcionário',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
+              icon: Icons.person_add,
+              label: 'Cadastro Funcionário',
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[600],
-                padding: const EdgeInsets.all(16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+            _buildGridButton(
               onPressed: () {
                 Navigator.push(
                   context,
@@ -96,27 +103,10 @@ class _HomePageFuncionarioState extends State<HomePageFuncionario> {
                   ),
                 );
               },
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.add_shopping_cart, size: 36, color: Colors.white),
-                  SizedBox(height: 10),
-                  Text(
-                    'Cadastro Produto',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
+              icon: Icons.add_shopping_cart,
+              label: 'Cadastro Produto',
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[600],
-                padding: const EdgeInsets.all(16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+            _buildGridButton(
               onPressed: () {
                 Navigator.push(
                   context,
@@ -125,55 +115,23 @@ class _HomePageFuncionarioState extends State<HomePageFuncionario> {
                   ),
                 );
               },
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.group_add, size: 36, color: Colors.white),
-                  SizedBox(height: 10),
-                  Text(
-                    'Cadastro Fornecedor',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
+              icon: Icons.group_add,
+              label: 'Cadastro Fornecedor',
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[600],
-                padding: const EdgeInsets.all(16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+            _buildGridButton(
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const ListProd()),
                 );
               },
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.list, size: 36, color: Colors.white),
-                  SizedBox(height: 10),
-                  Text(
-                    'Lista Produtos',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
+              icon: Icons.list,
+              label: 'Lista Produtos',
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[600],
-                padding: const EdgeInsets.all(16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+            _buildGridButton(
               onPressed: () {
+                // Assumindo que a classe se chama CadastroCardapioAprimoradoPage
+                // Se o nome for outro, ajuste aqui.
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -181,45 +139,18 @@ class _HomePageFuncionarioState extends State<HomePageFuncionario> {
                   ),
                 );
               },
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.menu_book, size: 36, color: Colors.white),
-                  SizedBox(height: 10),
-                  Text(
-                    'Cadastrar Cardápio',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
+              icon: Icons.menu_book,
+              label: 'Cadastrar Cardápio',
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[600],
-                padding: const EdgeInsets.all(16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+            _buildGridButton(
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const Vendas()),
                 );
               },
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.point_of_sale, size: 36, color: Colors.white),
-                  SizedBox(height: 10),
-                  Text(
-                    'Vendas',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
+              icon: Icons.point_of_sale,
+              label: 'Vendas',
             ),
           ],
         ),
