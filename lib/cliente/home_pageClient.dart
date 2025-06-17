@@ -3,10 +3,9 @@ import 'package:unilanches/cliente/cardapioPage.dart';
 import 'package:unilanches/cliente/carteira.dart';
 
 class HomePageclient extends StatefulWidget {
-  final String nome;
   final double saldo;
 
-  const HomePageclient({super.key, required this.nome, required this.saldo});
+  const HomePageclient({super.key, required this.saldo});
 
   @override
   State<HomePageclient> createState() => _HomePageclientState();
@@ -72,7 +71,7 @@ class _HomePageclientState extends State<HomePageclient> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Bem vindo - ${widget.nome}',
+                      'Bem vindo',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 32,

@@ -51,8 +51,7 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder:
-                  (context) => HomePageclient(nome: email.text, saldo: 0.00),
+              builder: (context) => HomePageclient(saldo: 0.00),
             ),
           );
         } else if (selectedFuncao!.nome == 'Funcionario') {
@@ -97,8 +96,7 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder:
-                  (context) => HomePageclient(nome: emailUsuario, saldo: 0.00),
+              builder: (context) => HomePageclient(saldo: 0.00),
             ),
           );
         } else if (funcaoUsuario == 'Funcionario') {
