@@ -31429,7 +31429,7 @@ while(true)switch(s){case 0:p=A.e9("https://api-a35y.onrender.com/api/login/")
 o=t.N
 n=A.aq(["Content-Type","application/json"],o,o)
 s=3
-return A.M(A.aJV(p,B.bc.t7(A.aq(["nome",a,"senha",b,"tipo_usuario",c],o,o),null),n),$async$aK9)
+return A.M(A.aJV(p,B.bc.t7(A.aq(["email",a,"senha",b,"tipo_usuario",c],o,o),null),n),$async$aK9)
 case 3:if(e.b===200){q=!0
 s=1
 break}else{q=!1
