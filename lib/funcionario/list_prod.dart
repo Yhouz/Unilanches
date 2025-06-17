@@ -204,7 +204,59 @@ class _ListProdState extends State<ListProd> {
                     ),
                     elevation: 4,
                     child: ListTile(
-                      leading: const Icon(Icons.fastfood, color: Colors.orange),
+                      leading:
+                          (produto.imagem != null && produto.imagem!.isNotEmpty)
+                              ? ClipRRect(
+                                // Para arredondar as bordas da imagem
+                                borderRadius: BorderRadius.circular(8.0),
+                                child: Image.network(
+                                  // ESCOLHA UMA DAS OPÇÕES ABAIXO, BASEADO ONDE SEU APP ESTÁ RODANDO:
+
+                                  // OPÇÃO 1: Se estiver rodando no EMULADOR ANDROID
+                                  // 'http://10.0.2.2:8000${produto.imagem}',
+
+                                  // OPÇÃO 2: Se estiver rodando em DISPOSITIVO FÍSICO (Android/iOS)
+                                  // Substitua 'SEU_IP_AQUI' pelo IP da sua máquina na rede local (ex: 192.168.1.100)
+                                  //'http://SEU_IP_AQUI:8000${produto.imagem}',
+
+                                  // OPÇÃO 3: Se estiver rodando no NAVEGADOR WEB (no mesmo PC que o Django)
+                                  'http://127.0.0.1:8000${produto.imagem}', // Esta é a que estava antes
+                                  width: 60,
+                                  height: 60,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    debugPrint(
+                                      'Erro ao carregar imagem: ${produto.imagem} - $error',
+                                    );
+                                    return const Icon(
+                                      Icons.broken_image,
+                                      color: Colors.grey,
+                                      size: 60,
+                                    );
+                                  },
+                                  loadingBuilder: (
+                                    context,
+                                    child,
+                                    loadingProgress,
+                                  ) {
+                                    if (loadingProgress == null) return child;
+                                    return const SizedBox(
+                                      width: 60,
+                                      height: 60,
+                                      child: Center(
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              )
+                              : const Icon(
+                                Icons.fastfood,
+                                color: Colors.orange,
+                                size: 60,
+                              ), // Ícone padrão se não houver imagem
                       title: Text(
                         produto.nome,
                         style: const TextStyle(fontWeight: FontWeight.bold),

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:typed_data'; // Para Uint8List
+import 'package:image_picker/image_picker.dart'; // Importar image_picker
+
 import 'package:unilanches/funcionario/list_prod.dart';
-import 'package:unilanches/src/models/produto_model.dart';
+import 'package:unilanches/src/models/produto_model.dart'; // Verifique o nome real do seu arquivo model, se é .1 ou não
 import 'package:unilanches/src/services/cadastro_prod.dart';
 
 class CadastroProduto extends StatefulWidget {
@@ -22,12 +25,18 @@ class _CadastroProdutoState extends State<CadastroProduto> {
   final margemController = TextEditingController();
   final unidadeController = TextEditingController();
 
+  // Variáveis para a imagem
+  Uint8List? imagemSelecionada; // Garanta que esta é a única declaração
+  String? nomeArquivoImagem; // Para guardar o nome original do arquivo
+
+  final ImagePicker _picker = ImagePicker(); // Instância do ImagePicker
+
   final List<String> unidadeList = [
     'KG',
     'UND',
     'G',
     'L',
-  ]; // Adicionado 'L' para Litro, comum em bebidas.
+  ];
 
   final List<String> listaCategorias = [
     'Bebidas',
@@ -60,15 +69,39 @@ class _CadastroProdutoState extends State<CadastroProduto> {
     super.dispose();
   }
 
+  // Função para selecionar a imagem (web-friendly)
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes(); // Lê como Uint8List
+      setState(() {
+        imagemSelecionada = bytes; // Atribui Uint8List
+        nomeArquivoImagem = pickedFile.name; // Pega o nome do arquivo
+      });
+    }
+  }
+
   Future<void> cadastrarProduto() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    // Certifique-se de que os valores dos Dropdowns são atribuídos aos controllers
+    // Valida se a imagem foi selecionada
+    if (imagemSelecionada == null || nomeArquivoImagem == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Por favor, selecione uma imagem.')),
+        );
+      }
+      return;
+    }
+
+    // Atribua os valores dos Dropdowns aos controllers
     categoriaController.text = categoriaSelecionada ?? '';
     unidadeController.text = unidadeSelecionada ?? '';
 
+    // Crie o ProdutoModel com os dados do formulário
     final produto = ProdutoModel(
       nome: nomeController.text.trim(),
       descricao: descricaoController.text.trim(),
@@ -76,27 +109,29 @@ class _CadastroProdutoState extends State<CadastroProduto> {
       quantidadeEstoque: int.tryParse(quantidadeController.text.trim()) ?? 0,
       categoria: categoriaController.text.trim(),
       id: null,
-      custo:
-          custoController.text
-              .trim(), // Considerar converter para double no model ou antes de enviar
-      margem:
-          margemController.text
-              .trim(), // Considerar converter para double no model ou antes de enviar
+      custo: custoController.text.trim(),
+      margem: margemController.text.trim(),
       unidade: unidadeController.text.trim(),
     );
 
     try {
-      final resultado = await produtoApi.cadastrarProduto(produto);
+      // Chame o método cadastrarProduto do seu serviço ProdutoApi,
+      // passando o ProdutoModel e os dados da imagem
+      final resultado = await produtoApi.cadastrarProduto(
+        produto,
+        imagemSelecionada!,
+        nomeArquivoImagem!,
+      );
 
       if (!mounted) return;
-      // Ajuste na lógica: se resultado for null, significa sucesso na API (retorna void ou null em caso de sucesso)
+
       if (resultado == null) {
-        // Supondo que null significa sucesso na API
+        // Sucesso: a API retornou null ou indicou sucesso
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Produto cadastrado com sucesso!')),
         );
-        _formKey.currentState!.reset();
-        // Limpar controllers e seleções de dropdown após o sucesso
+        _formKey.currentState!.reset(); // Limpa o formulário
+        // Limpa os controllers e seleções após o sucesso
         nomeController.clear();
         descricaoController.clear();
         precoController.clear();
@@ -106,17 +141,22 @@ class _CadastroProdutoState extends State<CadastroProduto> {
         setState(() {
           categoriaSelecionada = null;
           unidadeSelecionada = null;
+          imagemSelecionada = null; // Limpa a prévia da imagem
+          nomeArquivoImagem = null;
         });
       } else {
+        // Erro: a API retornou uma mensagem de erro
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao cadastrar produto.')),
+          SnackBar(content: Text('Erro ao cadastrar produto: $resultado')),
         );
+        print('Erro no cadastro: $resultado');
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro inesperado: $e')),
       );
+      print('Erro inesperado ao enviar produto: $e');
     }
   }
 
@@ -140,8 +180,8 @@ class _CadastroProdutoState extends State<CadastroProduto> {
       appBar: AppBar(
         title: const Text('Cadastro de Produto'),
         centerTitle: true,
-        backgroundColor: Colors.blue.shade700, // Tom de azul mais escuro
-        foregroundColor: Colors.white, // Texto branco no AppBar
+        backgroundColor: Colors.blue.shade700,
+        foregroundColor: Colors.white,
         actions: [
           TextButton.icon(
             onPressed: () {
@@ -151,7 +191,7 @@ class _CadastroProdutoState extends State<CadastroProduto> {
               );
             },
             icon: const Icon(
-              Icons.list_alt, // Ícone mais adequado para "consultar lista"
+              Icons.list_alt,
               color: Colors.white,
             ),
             label: const Text(
@@ -194,6 +234,53 @@ class _CadastroProdutoState extends State<CadastroProduto> {
                           null,
                           maxLines: 3,
                         ),
+                        const SizedBox(height: 16),
+                        // Botão para selecionar a imagem
+                        ElevatedButton.icon(
+                          onPressed: _pickImage,
+                          icon: const Icon(Icons.add_a_photo),
+                          label: const Text('Selecionar Imagem do Produto'),
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(50),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Prévia da imagem
+                        if (imagemSelecionada != null)
+                          Image.memory(
+                            // **** AQUI ESTÁ A CORREÇÃO CRÍTICA ****
+                            imagemSelecionada!, // Usa a variável Uint8List
+                            height: 200,
+                            width: double.infinity,
+                            fit:
+                                BoxFit
+                                    .contain, // Ajusta a imagem dentro do espaço
+                          )
+                        else
+                          Container(
+                            height: 200,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              border: Border.all(color: Colors.grey.shade400),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.image,
+                                  size: 50,
+                                  color: Colors.grey.shade600,
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Nenhuma imagem selecionada',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -224,7 +311,7 @@ class _CadastroProdutoState extends State<CadastroProduto> {
                           decoration: const InputDecoration(
                             labelText: 'Unidade',
                             border: OutlineInputBorder(),
-                            helperText: 'Ex: KG, UND, G', // Ajuda visual
+                            helperText: 'Ex: KG, UND, G',
                           ),
                           value: unidadeSelecionada,
                           items:
@@ -304,13 +391,13 @@ class _CadastroProdutoState extends State<CadastroProduto> {
                         _buildTextField(
                           margemController,
                           'Margem (%)',
-                          'Informe a Margem (ex: 0.20 para 20%)', // Adicionado helper text
+                          'Informe a Margem (ex: 0.20 para 20%)',
                           isNumber: true,
                           isDouble: true,
                         ),
                         const SizedBox(height: 16),
                         SizedBox(
-                          width: double.infinity, // Ocupa a largura total
+                          width: double.infinity,
                           child: ElevatedButton.icon(
                             onPressed: _valorProd,
                             icon: const Icon(Icons.calculate),
@@ -325,7 +412,7 @@ class _CadastroProdutoState extends State<CadastroProduto> {
                           precoController,
                           'Preço de Venda (R\$)',
                           null,
-                          enabled: false, // Para não permitir edição direta
+                          enabled: false,
                           isNumber: true,
                           isDouble: true,
                         ),
@@ -333,16 +420,13 @@ class _CadastroProdutoState extends State<CadastroProduto> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24), // Espaçamento antes do botão final
+                const SizedBox(height: 24),
                 SizedBox(
-                  width: double.infinity, // Ocupa a largura total
+                  width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () => cadastrarProduto(),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          Colors
-                              .green
-                              .shade700, // Cor de destaque para o botão principal
+                      backgroundColor: Colors.green.shade700,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       textStyle: const TextStyle(
@@ -356,7 +440,7 @@ class _CadastroProdutoState extends State<CadastroProduto> {
                     child: const Text('CADASTRAR PRODUTO'),
                   ),
                 ),
-                const SizedBox(height: 16), // Espaçamento no final
+                const SizedBox(height: 16),
               ],
             ),
           ),

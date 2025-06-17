@@ -16,6 +16,9 @@ dependencies:
   responsive_framework: ^1.1.0
   file_picker: ^6.2.1
   cached_network_image: ^3.4.1
+  image_picker: ^1.1.2
+  flutter_web_plugins:
+    sdk: flutter
   flutter_localizations:
     sdk: flutter
   

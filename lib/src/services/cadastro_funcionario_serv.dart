@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class CadastroFuncAPI {
   static const String baseUrl =
-      'http://127.0.0.1:8000/api/cadastro-funcionario/'; // Coloque sua URL da API
+      'https://api-a35y.onrender.com/api/cadastro-funcionario/'; // Coloque sua URL da API
 
   static Future<bool> cadastroFuncionario(
     String nome,
@@ -16,11 +16,10 @@ class CadastroFuncAPI {
     String dtAdmissao,
     String dtNascimento,
     String salario,
-    String endereco, 
+    String endereco,
     String numero,
     String uf,
-    String cidade
-
+    String cidade,
   ) async {
     final url = Uri.parse(baseUrl);
 

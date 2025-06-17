@@ -8,6 +8,7 @@ class ProdutoModel {
   final String? custo;
   final String? margem;
   final String? unidade;
+  final String? imagem;
 
   ProdutoModel({
     required this.id,
@@ -19,6 +20,7 @@ class ProdutoModel {
     this.custo,
     this.margem,
     this.unidade,
+    this.imagem,
   });
 
   factory ProdutoModel.fromJson(Map<String, dynamic> json) {
@@ -33,6 +35,7 @@ class ProdutoModel {
       custo: json["custo"] as String?,
       margem: json["margem"] as String?,
       unidade: json["unidade"] as String?,
+      imagem: json["imagem"] as String?,
     );
   }
 
@@ -47,6 +50,7 @@ class ProdutoModel {
       'custo': custo,
       'margem': margem,
       'unidade': unidade,
+      'imagem': imagem,
     };
   }
 }

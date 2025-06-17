@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:unilanches/Login_page.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 
 void main() {
+  usePathUrlStrategy();
   runApp(MyApp());
 }
 

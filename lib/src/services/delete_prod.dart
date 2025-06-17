@@ -1,7 +1,7 @@
 import 'package:http/http.dart' as http;
 
 class ProdDeletAPI {
-  final String baseUrl = 'http://127.0.0.1:8000/api/produtos/deletar/';
+  final String baseUrl = 'https://api-a35y.onrender.com/api/produtos/deletar/';
 
   Future<void> deletarProduto(int id) async {
     final url = Uri.parse('$baseUrl$id/');
