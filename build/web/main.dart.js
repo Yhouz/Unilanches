@@ -104160,7 +104160,7 @@ pa(a){var s=null
 this.c.af(t.Q).f.hX(A.p_(s,s,s,B.dA,B.kn,B.C,s,A.al(a,s,s,s,s,s,s,s),s,B.bA,s,s,s,s,s,s,s,s,s))},
 I(a){var s=this,r=null,q=A.kB(r,B.ec,r,0,B.j,r,r,B.afc)
 return A.ji(q,s.Q?B.Mg:A.En(A.v9(r,A.bZ(A.a([s.a9c(),B.kl,s.a9b(),B.kl,s.a9q(),B.km,s.a96()],t.p),B.az,B.A,B.G),s.d),B.b7),r)},
-a9c(){var s,r=this,q=null,p=A.hk(!1,r.e,B.RS,q,q,q,q,q,1,!1,q,q,q,!1,new A.avJ()),o=A.hk(!1,r.f,B.RZ,q,q,q,q,q,1,!1,q,q,q,!1,new A.avK()),n=A.a9E(B.d4,B.z),m=A.dv(4),l=r.r
+a9c(){var s,r=this,q=null,p=A.hk(!1,r.e,B.RS,q,q,q,q,q,1,!1,q,q,q,!1,new A.avJ()),o=A.hk(!1,r.f,B.RY,q,q,q,q,q,1,!1,q,q,q,!1,new A.avK()),n=A.a9E(B.d4,B.z),m=A.dv(4),l=r.r
 l=l==null?"Selecionar Data":"Data: "+(B.c.dC(B.e.k(A.ce(l)),2,"0")+"/"+B.c.dC(B.e.k(A.bh(l)),2,"0")+"/"+A.b4(l))
 s=t.p
 return A.iU(new A.aW(B.b7,A.bZ(A.a([B.aeA,B.T,p,B.T,o,B.T,A.o7(!1,q,!0,A.eQ(q,A.dh(A.a([B.mt,B.a96,A.al(l,q,q,q,A.cU(q,q,r.r==null?B.cg:B.m,q,q,q,q,q,q,q,q,16,q,q,q,q,q,!0,q,q,q,q,q,q,q,q),q,q,q),B.nO,B.qU],s),B.F,B.A,B.G),B.E,q,q,new A.dk(q,q,n,m,q,q,B.ax),q,q,q,B.b7,q,q,q),q,!0,q,q,q,q,q,q,q,q,q,r.gam6(),q,q,q,q,q,q,q)],s),B.az,B.A,B.G),q),q,q,q,q,q)},
@@ -104463,7 +104463,7 @@ q=A.a2(new A.a7(q,new A.awa(),p),p.i("az.E"))
 d=A.AQ(B.RO,i,q,new A.awb(j),new A.awc(),d,t.ZS)
 q=j.id
 p=j.wo("Sal\xe1rio (R$)",B.Q8,j.z,j.go,q,B.en)
-o=A.dh(A.a([A.dL(A.hk(!1,j.x,B.RY,i,i,i,i,i,1,!1,i,i,new A.awd(j,a),!0,i),1),B.hI,A.dL(A.hk(!1,j.y,B.RM,i,i,i,i,i,1,!1,i,i,new A.awe(j,a),!0,i),1)],h),B.F,B.A,B.G)
+o=A.dh(A.a([A.dL(A.hk(!1,j.x,B.RX,i,i,i,i,i,1,!1,i,i,new A.awd(j,a),!0,i),1),B.hI,A.dL(A.hk(!1,j.y,B.RM,i,i,i,i,i,1,!1,i,i,new A.awe(j,a),!0,i),1)],h),B.F,B.A,B.G)
 n=j.k1
 q=j.JA("Endere\xe7o",B.Qp,j.Q,q,n)
 m=j.k2
@@ -104472,7 +104472,7 @@ n=j.CW
 l=j.ch
 k=A.a0(l).i("a7<1,e4<ck>>")
 l=A.a2(new A.a7(l,new A.awf(),k),k.i("az.E"))
-n=A.AQ(B.RX,i,l,new A.awg(j),new A.awh(),n,t.VG)
+n=A.AQ(B.RW,i,l,new A.awg(j),new A.awh(),n,t.VG)
 l=j.k4?i:new A.awi(j)
 k=A.ik(i,i,B.cx,i,i,i,i,i,i,i,i,i,B.qb,i,new A.ci(A.dv(8),B.q),i,i,i,i,i)
 return A.ji(g,A.dK(A.En(new A.e2(B.oK,A.v9(i,A.bZ(A.a([B.aeY,B.lK,B.T,e,B.T,f,B.T,s,B.T,r,B.km,B.afu,B.lK,B.T,d,B.T,p,B.T,o,B.km,B.aeP,B.lK,B.T,q,B.T,m,B.T,n,B.km,A.jS(!1,j.k4?B.pa:B.af6,i,i,i,i,i,i,l,i,k)],h),B.cy,B.A,B.G),i),i),B.Pr),i,i),i)},
@@ -105016,7 +105016,7 @@ else{p=r.c
 p.toString
 p=A.bW(p,q,s).w.a.a>800?3:2}return A.dL(A.aQe(q,B.ac,new A.aru(p,16,16,0.8),new A.aHE(r),r.gRd().length,q),1)},
 PI(){var s=this,r=null,q=t.p
-return A.bZ(A.a([new A.aW(B.b7,A.F2(!0,B.cE,!1,r,!0,B.C,r,A.a8t(),r,r,r,r,r,r,2,B.RW,B.ac,!0,r,!0,r,!1,r,B.cN,r,r,r,r,r,r,r,1,r,r,!1,"\u2022",r,new A.aHG(s),r,r,r,!1,r,r,!1,r,!0,r,B.cZ,r,r,B.cu,B.c8,r,r,r,r,r,r,r,!0,B.aS,r,B.fo,r,r,r,r),r),new A.aW(B.dX,new A.dE(B.hV,r,r,A.atN(B.dK,A.a([s.zG("Todos"),s.zG("Bebidas"),s.zG("Lanches"),s.zG("Sobremesas")],q),8,8),r),r),B.T,s.a9n()],q),B.F,B.A,B.G)},
+return A.bZ(A.a([new A.aW(B.b7,A.F2(!0,B.cE,!1,r,!0,B.C,r,A.a8t(),r,r,r,r,r,r,2,B.RV,B.ac,!0,r,!0,r,!1,r,B.cN,r,r,r,r,r,r,r,1,r,r,!1,"\u2022",r,new A.aHG(s),r,r,r,!1,r,r,!1,r,!0,r,B.cZ,r,r,B.cu,B.c8,r,r,r,r,r,r,r,!0,B.aS,r,B.fo,r,r,r,r),r),new A.aW(B.dX,new A.dE(B.hV,r,r,A.atN(B.dK,A.a([s.zG("Todos"),s.zG("Bebidas"),s.zG("Lanches"),s.zG("Sobremesas")],q),8,8),r),r),B.T,s.a9n()],q),B.F,B.A,B.G)},
 zG(a){var s,r=this,q=null,p=r.f===a,o=A.al(a,q,q,q,q,q,q,q),n=r.c
 n.toString
 n=A.D(n).ax.b.bp(0.2)
@@ -105199,7 +105199,7 @@ break
 case 6:case 1:return A.H(q,r)
 case 2:return A.G(o.at(-1),r)}})
 return A.I($async$E1,r)},
-I(a){var s,r=this,q=null,p=A.kB(q,B.cx,!0,q,q,q,q,A.al("Registrar Usu\xe1rio",q,q,q,q,q,q,q)),o=A.hk(!1,r.d,B.RU,q,r.z,q,q,q,1,!1,new A.aEc(r,a),q,q,!1,q),n=A.hk(!1,r.e,B.RR,q,r.Q,q,B.ks,q,1,!1,new A.aEd(r,a),q,q,!1,q),m=A.hk(!1,r.f,B.S_,q,r.as,q,B.en,q,1,!1,new A.aEe(r,a),q,q,!1,q),l=A.hk(!1,r.r,B.RV,q,r.at,q,B.hN,q,1,!1,new A.aEf(r,a),q,q,!1,q),k=A.hk(!1,r.w,B.RT,q,r.ax,q,B.Iy,q,1,!0,new A.aEg(a),q,q,!1,q)
+I(a){var s,r=this,q=null,p=A.kB(q,B.cx,!0,q,q,q,q,A.al("Registrar Usu\xe1rio",q,q,q,q,q,q,q)),o=A.hk(!1,r.d,B.S_,q,r.z,q,q,q,1,!1,new A.aEc(r,a),q,q,!1,q),n=A.hk(!1,r.e,B.RR,q,r.Q,q,B.ks,q,1,!1,new A.aEd(r,a),q,q,!1,q),m=A.hk(!1,r.f,B.RZ,q,r.as,q,B.en,q,1,!1,new A.aEe(r,a),q,q,!1,q),l=A.hk(!1,r.r,B.RU,q,r.at,q,B.hN,q,1,!1,new A.aEf(r,a),q,q,!1,q),k=A.hk(!1,r.w,B.RT,q,r.ax,q,B.Iy,q,1,!0,new A.aEg(a),q,q,!1,q)
 if(r.ch)s=B.i5
 else{s=A.ik(q,q,B.dA,q,q,q,q,q,q,B.m,q,q,q,q,new A.ci(A.dv(50),B.q),q,q,q,q,q)
 s=A.jS(!1,A.al("Registrar",q,q,q,A.cU(q,q,q,q,q,q,q,q,q,q,q,20,q,q,q,q,q,!0,q,q,q,q,q,q,q,q),q,q,q),q,q,q,q,q,q,new A.aEh(r,a),q,s)}return A.dK(A.ji(p,A.dK(A.En(A.eQ(q,A.v9(q,A.bZ(A.a([o,B.cK,n,B.cK,m,B.cK,l,B.cK,k,B.I5,s],t.p),B.F,B.bu,B.G),q),B.E,q,q,q,q,q,q,B.b7,q,q,300),q),q,q),q),q,q)}}
@@ -110036,19 +110036,19 @@ B.R3=new A.bU(B.QH,null,null,null,null)
 B.RS=new A.dV(null,null,null,"Nome do Card\xe1pio",null,null,null,null,null,null,"Ex: Card\xe1pio Especial de Sexta",null,null,null,null,null,!0,!0,null,null,null,null,null,null,null,null,null,B.R3,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.aW,!0,null,null,null)
 B.Ra=new A.bU(B.mr,null,null,null,null)
 B.RT=new A.dV(null,null,null,"Senha",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,null,null,null,null,null,null,null,null,null,B.Ra,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.aW,!0,null,null,null)
-B.QX=new A.bU(B.iM,null,null,null,null)
-B.RU=new A.dV(null,null,null,"Nome",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,null,null,null,null,null,null,null,null,null,B.QX,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.aW,!0,null,null,null)
 B.R9=new A.bU(B.ms,null,null,null,null)
-B.RV=new A.dV(null,null,null,"Telefone",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,null,null,null,null,null,null,null,null,null,B.R9,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.aW,!0,null,null,null)
+B.RU=new A.dV(null,null,null,"Telefone",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,null,null,null,null,null,null,null,null,null,B.R9,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.aW,!0,null,null,null)
 B.Pl=new A.ay(16,12,16,12)
 B.R_=new A.bU(B.qP,null,null,null,null)
-B.RW=new A.dV(null,null,null,"Buscar produto...",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,null,null,null,null,null,null,null,B.Pl,null,B.R_,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.aW,!0,null,null,null)
-B.RX=new A.dV(null,null,null,"Estado (UF)",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,null,null,null,null,null,null,null,null,null,B.qV,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.aW,!0,null,null,null)
-B.RY=new A.dV(null,null,null,"Data de Admiss\xe3o",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,null,null,null,null,null,null,null,null,null,B.mt,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.aW,!0,null,null,null)
+B.RV=new A.dV(null,null,null,"Buscar produto...",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,null,null,null,null,null,null,null,B.Pl,null,B.R_,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.aW,!0,null,null,null)
+B.RW=new A.dV(null,null,null,"Estado (UF)",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,null,null,null,null,null,null,null,null,null,B.qV,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.aW,!0,null,null,null)
+B.RX=new A.dV(null,null,null,"Data de Admiss\xe3o",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,null,null,null,null,null,null,null,null,null,B.mt,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.aW,!0,null,null,null)
 B.Qg=new A.b8(57672,"MaterialIcons",null,!1)
 B.QW=new A.bU(B.Qg,null,null,null,null)
-B.RZ=new A.dV(null,null,null,"Categoria",null,null,null,null,null,null,"Ex: Almo\xe7o, Lanche, Jantar",null,null,null,null,null,!0,!0,null,null,null,null,null,null,null,null,null,B.QW,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.aW,!0,null,null,null)
-B.S_=new A.dV(null,null,null,"CPF",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,null,null,null,null,null,null,null,null,null,B.qZ,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.aW,!0,null,null,null)
+B.RY=new A.dV(null,null,null,"Categoria",null,null,null,null,null,null,"Ex: Almo\xe7o, Lanche, Jantar",null,null,null,null,null,!0,!0,null,null,null,null,null,null,null,null,null,B.QW,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.aW,!0,null,null,null)
+B.RZ=new A.dV(null,null,null,"CPF",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,null,null,null,null,null,null,null,null,null,B.qZ,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.aW,!0,null,null,null)
+B.QX=new A.bU(B.iM,null,null,null,null)
+B.S_=new A.dV(null,null,null,"Usu\xe1rio",null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,null,null,null,null,null,null,null,null,null,B.QX,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,B.aW,!0,null,null,null)
 B.S0=new A.dV(null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,!0,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,!0,null,null,null)
 B.S2=new A.e5(0.25,0.5,B.a5)
 B.r3=new A.e5(0.5,1,B.b5)
