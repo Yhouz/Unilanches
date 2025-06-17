@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 Future<bool> verificarLogin(
-  String nome,
+  String email,
   String senha,
   String tipoUsuario,
 ) async {
@@ -12,7 +12,7 @@ Future<bool> verificarLogin(
     url,
     headers: {'Content-Type': 'application/json'},
     body: jsonEncode({
-      'nome': nome,
+      'email': email,
       'senha': senha,
       'tipo_usuario': tipoUsuario,
     }),
