@@ -174,7 +174,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     // Campo Nome
                     TextFormField(
                       decoration: const InputDecoration(
-                        labelText: 'Nome',
+                        labelText: 'Usuário',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.person),
                       ),

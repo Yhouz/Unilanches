@@ -21,28 +21,28 @@ class Funcao {
 
 class _LoginPageState extends State<LoginPage> {
   final formKey = GlobalKey<FormState>();
-  final TextEditingController nome = TextEditingController();
+  final TextEditingController email = TextEditingController();
   final TextEditingController senha = TextEditingController();
   final List<Funcao> listFuncao = [
     Funcao(nome: 'Cliente'),
     Funcao(nome: 'Funcionario'),
   ];
   Funcao? selectedFuncao;
-  final FocusNode focoNome = FocusNode();
+  final FocusNode focoEmail = FocusNode();
   final FocusNode focoSenha = FocusNode();
 
   @override
   void dispose() {
-    nome.dispose();
+    email.dispose();
     senha.dispose();
-    focoNome.dispose();
+    focoEmail.dispose();
     focoSenha.dispose();
     super.dispose();
   }
 
   void loginUser() {
     if (formKey.currentState!.validate()) {
-      log('Nome: ${nome.text}');
+      log('Email: ${email.text}');
       log('Senha: ${senha.text}');
       log('Função: ${selectedFuncao?.nome ?? "Nenhuma selecionada"}');
 
@@ -52,14 +52,14 @@ class _LoginPageState extends State<LoginPage> {
             context,
             MaterialPageRoute(
               builder:
-                  (context) => HomePageclient(nome: nome.text, saldo: 0.00),
+                  (context) => HomePageclient(nome: email.text, saldo: 0.00),
             ),
           );
         } else if (selectedFuncao!.nome == 'Funcionario') {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => HomePageFuncionario(nome: nome.text),
+              builder: (context) => HomePageFuncionario(nome: email.text),
             ),
           );
         } else {
@@ -70,7 +70,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<bool> loginVerific() async {
-    final nomeUsuario = nome.text.trim();
+    final emailUsuario = email.text.trim();
     final senhaUsuario = senha.text.trim();
     final funcaoUsuario = selectedFuncao?.nome ?? '';
 
@@ -84,7 +84,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final sucesso = await verificarLogin(
-        nomeUsuario,
+        emailUsuario,
         senhaUsuario,
         funcaoUsuario,
       );
@@ -98,14 +98,14 @@ class _LoginPageState extends State<LoginPage> {
             context,
             MaterialPageRoute(
               builder:
-                  (context) => HomePageclient(nome: nomeUsuario, saldo: 0.00),
+                  (context) => HomePageclient(nome: emailUsuario, saldo: 0.00),
             ),
           );
         } else if (funcaoUsuario == 'Funcionario') {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => HomePageFuncionario(nome: nomeUsuario),
+              builder: (context) => HomePageFuncionario(nome: emailUsuario),
             ),
           );
         }
@@ -173,14 +173,14 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 SizedBox(height: 20),
                 TextFormField(
-                  controller: nome,
-                  focusNode: focoNome,
+                  controller: email,
+                  focusNode: focoEmail,
                   decoration: InputDecoration(
-                    labelText: 'Nome',
+                    labelText: 'Email',
                     border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person),
+                    prefixIcon: Icon(Icons.email),
                   ),
-                  keyboardType: TextInputType.name,
+                  keyboardType: TextInputType.emailAddress,
                   onFieldSubmitted: (_) {
                     FocusScope.of(context).requestFocus(focoSenha);
                   },
