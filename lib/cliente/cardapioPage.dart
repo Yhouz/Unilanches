@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../src/models/cadastro_cardapio.dart' show CardapioModel;
-import '../src/models/produto_model.dart' show ProdutoModel;
-import '../src/services/cadastro_cardapio.dart' show CardapioApiService;
-import 'carrinhoCliente.dart' show CarrinhoPage, CartScreenState, CartScreen;
+import 'package:shared_preferences/shared_preferences.dart'; // Importar shared_preferences
+import 'package:unilanches/src/models/carrinho_model.dart';
+import 'package:unilanches/src/models/cadastro_cardapio.dart'; // Importa seu CardapioModel
+import 'package:unilanches/src/models/produto_model.dart'; // Importa seu ProdutoModel
+import 'package:unilanches/src/services/cadastro_cardapio.dart'; // Importa seu CardapioApiService
+import 'package:unilanches/src/services/carrinho_service.dart'; // Importa seu CarrinhoService
+import 'package:unilanches/cliente/carrinhoCliente.dart'; // Importa sua CartScreen (verifique o caminho exato)
 
 class CardapioClientePage extends StatefulWidget {
   const CardapioClientePage({super.key});
@@ -14,24 +17,91 @@ class CardapioClientePage extends StatefulWidget {
 
 class _CardapioClientePageState extends State<CardapioClientePage> {
   CardapioModel? cardapioAtual;
-  // List<ProdutoModel> produtos = [];
   bool carregando = true;
   String? erro;
   List<ProdutoModel> produtosSelecionados = [];
 
+  // Instância do CarrinhoService
+  final CarrinhoService _carrinhoService = CarrinhoService();
+
+  // Variável para armazenar o ID do carrinho ativo
+  int? _currentCarrinhoId;
+
   @override
   void initState() {
     super.initState();
-    _carregarCardapioDoDia();
+    _initializeData(); // Nova função para carregar dados e o ID do carrinho
+  }
+
+  // Inicializa o ID do carrinho e carrega o cardápio
+  Future<void> _initializeData() async {
+    await _loadCarrinhoId(); // Primeiro, carregue o ID do carrinho
+    await _carregarCardapioDoDia(); // Em seguida, carregue o cardápio
+  }
+
+  // Função para carregar o ID do carrinho salvo ou criar um novo
+  Future<void> _loadCarrinhoId() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _currentCarrinhoId = prefs.getInt('carrinhoId'); // Tenta obter o ID salvo
+
+      // Para fins de teste local, você pode mudar este ID ou obtê-lo de outra fonte.
+      // Em uma aplicação real, este ID viria do usuário logado.
+      int testUserId = 1; // ID de usuário temporário para teste
+
+      CarrinhoModel? fetchedCarrinho;
+
+      if (_currentCarrinhoId != null) {
+        try {
+          fetchedCarrinho = await _carrinhoService.buscarCarrinhoPorId(
+            _currentCarrinhoId!,
+          );
+        } catch (e) {
+          print(
+            'Carrinho salvo ($_currentCarrinhoId) não encontrado. Tentando criar um novo...',
+          );
+          fetchedCarrinho = await _carrinhoService.criarCarrinho(
+            testUserId,
+          ); // Usa o ID de teste
+        }
+      } else {
+        print('Nenhum carrinhoId salvo. Tentando criar um novo carrinho...');
+        fetchedCarrinho = await _carrinhoService.criarCarrinho(
+          testUserId,
+        ); // Usa o ID de teste
+      }
+
+      // ignore: unnecessary_null_comparison
+      if (fetchedCarrinho != null) {
+        _currentCarrinhoId = fetchedCarrinho.id;
+        await prefs.setInt(
+          'carrinhoId',
+          _currentCarrinhoId!,
+        ); // Salva o ID recém-obtido/criado
+        // Opcional: _showSnackBar('Carrinho (ID: $_currentCarrinhoId) pronto para uso.');
+      } else {
+        // Trate a falha crítica aqui se não conseguir obter/criar um carrinho
+        print('Falha crítica: Não foi possível obter ou criar um carrinho.');
+        // Pode ser útil mostrar um erro persistente ou redirecionar o usuário
+        setState(() {
+          erro = 'Erro crítico ao inicializar o carrinho. Tente novamente.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        erro = 'Erro ao inicializar o carrinho: $e';
+      });
+      print('Erro detalhado em _loadCarrinhoId: $e');
+    }
   }
 
   Future<void> _carregarCardapioDoDia() async {
-    try {
-      setState(() {
-        carregando = true;
-        erro = null;
-      });
+    setState(() {
+      carregando = true;
+      erro = null; // Limpa o erro ao tentar carregar novamente
+    });
 
+    try {
       final apiService = CardapioApiService();
       final cardapio = await apiService.buscarCardapioDoDia();
 
@@ -56,6 +126,17 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
         erro = 'Erro ao carregar cardápio: $e';
         carregando = false;
       });
+      print('Erro detalhado em _carregarCardapioDoDia: $e');
+    }
+  }
+
+  // Função auxiliar para exibir SnackBar de forma segura
+  void _showSnackBar(String message) {
+    if (mounted) {
+      // Verifica se o widget ainda está montado
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
     }
   }
 
@@ -69,20 +150,20 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _carregarCardapioDoDia,
+            onPressed: _initializeData, // Recarrega cardápio e ID do carrinho
           ),
           TextButton.icon(
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => CartScreen()),
+                MaterialPageRoute(builder: (context) => const CartScreen()),
               );
             },
-            icon: Icon(
+            icon: const Icon(
               Icons.shopping_cart,
               color: Colors.white,
             ),
-            label: Text(
+            label: const Text(
               'Ir ao Carrinho',
               style: TextStyle(color: Colors.white),
             ),
@@ -128,7 +209,7 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _carregarCardapioDoDia,
+              onPressed: _initializeData, // Tentar novamente (recarrega tudo)
               child: const Text('Tentar Novamente'),
             ),
           ],
@@ -364,7 +445,6 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
                   ),
                   const SizedBox(height: 16),
                 ],
-
                 Text(
                   'Preço: R\$ ${produto.preco.toStringAsFixed(2)}',
                   style: const TextStyle(
@@ -391,25 +471,26 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
     );
   }
 
-  void _adicionarAoCarrinho(ProdutoModel produto) {
-    // Implementar lógica do carrinho
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Produto Adicionado!'),
-          content: Text('${produto.nome} foi adicionado ao seu carrinho.'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop(); // Fecha o diálogo
-              },
-            ),
-          ],
-        );
-      },
-    );
+  void _adicionarAoCarrinho(ProdutoModel produto) async {
+    // Verifica se temos um ID de carrinho válido
+    if (_currentCarrinhoId == null) {
+      _showSnackBar(
+        'Erro: Carrinho não inicializado. Tente recarregar a página.',
+      );
+      return;
+    }
+
+    try {
+      // Usa o ID do carrinho obtido dinamicamente
+      await _carrinhoService.adicionarItemCarrinho(
+        carrinhoId: _currentCarrinhoId!, // Usando o ID dinâmico
+        produtoId: produto.id!, // Assumindo que produto.id não é nulo
+        quantidade: 1, // Adiciona 1 unidade por padrão
+      );
+      _showSnackBar('${produto.nome} adicionado ao carrinho!');
+    } catch (e) {
+      _showSnackBar('Erro ao adicionar ${produto.nome}: $e');
+    }
   }
 
   String _formatarData(String data) {
@@ -422,6 +503,6 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
   }
 }
 
-extension on ProdutoModel {
-  get imagemUrl => null;
-}
+// REMOVIDA A EXTENSÃO PROBLEMÁTICA QUE ESTAVA ANULANDO A IMAGEM URL.
+// CERTIFIQUE-SE DE QUE SEU 'ProdutoModel' TEM UM CAMPO 'imagemUrl' (String?)
+// e que ele está sendo corretamente desserializado no 'ProdutoModel.fromJson'.

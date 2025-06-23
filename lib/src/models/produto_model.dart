@@ -39,6 +39,8 @@ class ProdutoModel {
     );
   }
 
+  get imagemUrl => null;
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

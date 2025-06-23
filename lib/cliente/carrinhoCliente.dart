@@ -1,23 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Importar shared_preferences
 
-// --- Cart Item Model (You'll likely have this in your actual app) ---
-class CartItem {
-  final String id;
-  final String name;
-  final String imageUrl;
-  double price;
-  int quantity;
+import 'package:unilanches/src/services/carrinho_service.dart';
+import 'package:unilanches/src/models/carrinho_model.dart';
 
-  CartItem({
-    required this.id,
-    required this.name,
-    required this.imageUrl,
-    required this.price,
-    required this.quantity,
-  });
-}
+// Importar ItemCarrinhoModel
 
-// --- Cart Screen Widget ---
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
 
@@ -26,79 +14,296 @@ class CartScreen extends StatefulWidget {
 }
 
 class CartScreenState extends State<CartScreen> {
-  // Dummy Cart Data - Replace with your actual cart management
-  List<CartItem> _cartItems = [
-    CartItem(
-      id: '1',
-      name: 'Product A',
-      imageUrl: 'https://via.placeholder.com/150',
-      price: 29.99,
-      quantity: 1,
-    ),
-    CartItem(
-      id: '2',
-      name: 'Product B',
-      imageUrl: 'https://via.placeholder.com/150',
-      price: 49.99,
-      quantity: 2,
-    ),
-    CartItem(
-      id: '3',
-      name: 'Product C',
-      imageUrl: 'https://via.placeholder.com/150',
-      price: 19.99,
-      quantity: 1,
-    ),
-  ];
+  final CarrinhoService _service = CarrinhoService();
+  CarrinhoModel? _carrinho; // Removido 'late', inicializado como null
+  bool _loading = true;
+  String? _error;
+  int? _currentCarrinhoId; // Para armazenar o ID do carrinho ativo
 
-  // Function to calculate total price
+  @override
+  void initState() {
+    super.initState();
+    _loadAndFetchCarrinho(); // Chamada inicial para carregar ID e buscar/criar carrinho
+  }
+
+  // Esta função é responsável por carregar o ID do carrinho salvo,
+  // buscar o carrinho na API, ou criar um novo se não houver um.
+  Future<void> _loadAndFetchCarrinho() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _currentCarrinhoId = prefs.getInt('carrinhoId');
+
+      const int testUserId = 1;
+
+      CarrinhoModel fetchedCarrinho;
+
+      if (_currentCarrinhoId != null) {
+        try {
+          fetchedCarrinho = await _service.buscarCarrinhoPorId(
+            _currentCarrinhoId!,
+          );
+        } catch (e) {
+          print(
+            'Carrinho salvo ($_currentCarrinhoId) não encontrado. Criando novo...',
+          );
+          fetchedCarrinho = await _service.criarCarrinho(testUserId);
+        }
+      } else {
+        print('Nenhum carrinhoId salvo. Criando novo...');
+        fetchedCarrinho = await _service.criarCarrinho(testUserId);
+      }
+
+      _carrinho = fetchedCarrinho;
+      _currentCarrinhoId = _carrinho!.id;
+      await prefs.setInt('carrinhoId', _currentCarrinhoId!);
+      _showSnackBar('Carrinho carregado/criado com sucesso!');
+    } catch (e) {
+      _error = 'Erro ao carregar carrinho: $e';
+      print('Erro: $_error');
+    } finally {
+      setState(() {
+        _loading = false;
+      });
+    }
+  }
+
+  // Recarrega os dados do carrinho usando o ID atualmente armazenado (_currentCarrinhoId)
+  Future<void> _fetchCarrinho() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      if (_currentCarrinhoId != null) {
+        // Usa o ID dinâmico do carrinho
+        // Reintroduzindo o cast explícito para CarrinhoModel?
+        _carrinho =
+            (await _service.buscarCarrinhoPorId(_currentCarrinhoId!))
+                as CarrinhoModel?;
+      } else {
+        // Se por algum motivo _currentCarrinhoId estiver nulo aqui (não deveria após _loadAndFetchCarrinho),
+        // chame a lógica de carregamento inicial novamente para garantir que um ID seja obtido.
+        await _loadAndFetchCarrinho();
+      }
+    } catch (e) {
+      _error = 'Erro ao recarregar carrinho: $e';
+      print('Erro detalhado em _fetchCarrinho: $_error');
+    } finally {
+      setState(() {
+        _loading = false;
+      });
+    }
+  }
+
   double _getTotalPrice() {
-    return _cartItems.fold(
-      0.0,
-      (sum, item) => sum + (item.price * item.quantity),
+    return _carrinho?.totalValor ?? 0;
+  }
+
+  // Remove um item do carrinho
+  void _removeItem(int itemId) async {
+    if (_currentCarrinhoId == null) {
+      _showSnackBar('Nenhum carrinho ativo.');
+      return;
+    }
+    setState(() {
+      _loading = true; // Mostra indicador de carregamento
+    });
+    try {
+      await _service.deletarItemCarrinho(itemId);
+      _showSnackBar('Item removido do carrinho.');
+      await _fetchCarrinho(); // Recarrega o carrinho para atualizar a UI e o total
+    } catch (e) {
+      _showSnackBar('Erro ao remover item: $e');
+    } finally {
+      setState(() {
+        _loading = false;
+      });
+    }
+  }
+
+  // Atualiza a quantidade de um item no carrinho
+  void _updateItemQuantity(int itemId, int currentQuantity, int change) async {
+    if (_currentCarrinhoId == null) {
+      _showSnackBar('Nenhum carrinho ativo.');
+      return;
+    }
+
+    final newQuantity = currentQuantity + change;
+    if (newQuantity < 0) {
+      // Não permite quantidade negativa
+      _showSnackBar('A quantidade não pode ser negativa.');
+      return;
+    }
+    if (newQuantity == 0) {
+      // Se a nova quantidade for zero, pergunta ao usuário se deseja remover o item
+      bool? confirmRemove = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            title: const Text('Remover item?'),
+            content: const Text('Deseja remover este item do carrinho?'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Cancelar'),
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(false);
+                },
+              ),
+              TextButton(
+                child: const Text('Remover'),
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(true);
+                },
+              ),
+            ],
+          );
+        },
+      );
+      if (confirmRemove == true) {
+        _removeItem(itemId); // Chama a função de remover item
+      }
+      return; // Sai da função após o tratamento de quantidade zero
+    }
+
+    setState(() {
+      _loading = true; // Mostra indicador de carregamento
+    });
+    try {
+      await _service.editarItemCarrinho(itemId, newQuantity);
+      _showSnackBar('Quantidade atualizada para $newQuantity.');
+      await _fetchCarrinho(); // Recarrega o carrinho para atualizar a UI e o total
+    } catch (e) {
+      _showSnackBar('Erro ao atualizar quantidade: $e');
+    } finally {
+      setState(() {
+        _loading = false;
+      });
+    }
+  }
+
+  // Limpa todos os itens do carrinho ativo
+  void _clearCart() async {
+    if (_currentCarrinhoId == null) {
+      _showSnackBar('Nenhum carrinho ativo para limpar.');
+      return;
+    }
+    // Adiciona uma confirmação antes de limpar o carrinho completamente
+    bool? confirmClear = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('Limpar Carrinho?'),
+          content: const Text(
+            'Tem certeza que deseja remover todos os itens do carrinho?',
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancelar'),
+              onPressed: () {
+                Navigator.of(dialogContext).pop(false);
+              },
+            ),
+            TextButton(
+              child: const Text('Confirmar'),
+              onPressed: () {
+                Navigator.of(dialogContext).pop(true);
+              },
+            ),
+          ],
+        );
+      },
     );
-  }
 
-  // Function to remove an item
-  void _removeItem(String id) {
-    setState(() {
-      _cartItems.removeWhere((item) => item.id == id);
-    });
-  }
-
-  // Function to increase item quantity
-  void _increaseQuantity(String id) {
-    setState(() {
-      final index = _cartItems.indexWhere((item) => item.id == id);
-      if (index != -1) {
-        _cartItems[index].quantity++;
+    if (confirmClear == true) {
+      setState(() {
+        _loading = true; // Mostra indicador de carregamento
+      });
+      try {
+        // Usa o ID dinâmico do carrinho
+        await _service.limparCarrinho(_currentCarrinhoId!);
+        _showSnackBar('Carrinho limpo com sucesso!');
+        await _fetchCarrinho(); // Recarrega o carrinho para atualizar a UI
+      } catch (e) {
+        _showSnackBar('Erro ao limpar carrinho: $e');
+      } finally {
+        setState(() {
+          _loading = false;
+        });
       }
-    });
+    }
   }
 
-  // Function to decrease item quantity
-  void _decreaseQuantity(String id) {
-    setState(() {
-      final index = _cartItems.indexWhere((item) => item.id == id);
-      if (index != -1 && _cartItems[index].quantity > 1) {
-        _cartItems[index].quantity--;
-      } else if (index != -1 && _cartItems[index].quantity == 1) {
-        // Optionally remove item if quantity becomes 0
-        _removeItem(id);
-      }
-    });
+  // Função auxiliar para exibir SnackBar de forma segura
+  void _showSnackBar(String message) {
+    // Garante que o widget ainda está montado antes de mostrar o SnackBar
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Meu Carrinho'),
-        centerTitle: true,
+        title: const Text('Meu Carrinho'),
+        backgroundColor: Colors.orange,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed:
+                _fetchCarrinho, // Botão de refresh para recarregar o carrinho
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_sweep),
+            onPressed: _clearCart, // Botão para limpar o carrinho
+          ),
+        ],
       ),
       body:
-          _cartItems.isEmpty
+          _loading
+              ? const Center(
+                child: CircularProgressIndicator(),
+              ) // Indicador de carregamento
+              : _error != null
               ? Center(
+                // Exibe mensagem de erro se houver
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _error!,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed:
+                          _loadAndFetchCarrinho, // Tentar novamente (carrega/cria)
+                      child: const Text('Tentar Novamente'),
+                    ),
+                  ],
+                ),
+              )
+              : _carrinho == null || _carrinho!.itens.isEmpty
+              ? Center(
+                // Exibe mensagem de carrinho vazio
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -107,26 +312,24 @@ class CartScreenState extends State<CartScreen> {
                       size: 80,
                       color: Colors.grey[400],
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Text(
                       'Seu carrinho está vazio!',
-                      style: TextStyle(
-                        fontSize: 20,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 20, color: Colors.grey[600]),
                     ),
                   ],
                 ),
               )
               : Column(
+                // Exibe os itens do carrinho se houver
                 children: [
                   Expanded(
                     child: ListView.builder(
-                      itemCount: _cartItems.length,
+                      itemCount: _carrinho!.itens.length,
                       itemBuilder: (context, index) {
-                        final item = _cartItems[index];
+                        final item = _carrinho!.itens[index];
                         return Card(
-                          margin: EdgeInsets.symmetric(
+                          margin: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 8,
                           ),
@@ -135,68 +338,95 @@ class CartScreenState extends State<CartScreen> {
                             padding: const EdgeInsets.all(8.0),
                             child: Row(
                               children: [
-                                // Product Image
+                                // Imagem do produto
                                 Container(
                                   width: 80,
                                   height: 80,
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8),
                                     image: DecorationImage(
-                                      image: NetworkImage(item.imageUrl),
+                                      image: NetworkImage(
+                                        // Usa 'item.produto.imagemUrl' que deve vir do ProdutoModel
+                                        // Se for nulo, usa um placeholder
+                                        item.produto.imagemUrl ??
+                                            'https://via.placeholder.com/150',
+                                      ),
                                       fit: BoxFit.cover,
                                     ),
                                   ),
                                 ),
-                                SizedBox(width: 16),
-                                // Product Details
+                                const SizedBox(width: 16),
+                                // Detalhes e Controles de Quantidade
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        item.name,
-                                        style: TextStyle(
+                                        item.produto.nome,
+                                        style: const TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      SizedBox(height: 4),
                                       Text(
-                                        'R\$ ${item.price.toStringAsFixed(2)}',
+                                        'R\$ ${item.produto.preco.toStringAsFixed(2)}',
                                         style: TextStyle(
                                           fontSize: 16,
                                           color: Colors.grey[700],
                                         ),
                                       ),
-                                      SizedBox(height: 8),
-                                      // Quantity Controls
+                                      const SizedBox(height: 8),
                                       Row(
                                         children: [
                                           IconButton(
-                                            icon: Icon(Icons.remove_circle),
+                                            icon: const Icon(
+                                              Icons.remove_circle_outline,
+                                            ),
                                             onPressed:
-                                                () =>
-                                                    _decreaseQuantity(item.id),
+                                                () => _updateItemQuantity(
+                                                  item.id,
+                                                  item.quantidade,
+                                                  -1,
+                                                ),
                                           ),
                                           Text(
-                                            '${item.quantity}',
-                                            style: TextStyle(fontSize: 16),
+                                            item.quantidade.toString(),
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                           IconButton(
-                                            icon: Icon(Icons.add_circle),
+                                            icon: const Icon(
+                                              Icons.add_circle_outline,
+                                            ),
                                             onPressed:
-                                                () =>
-                                                    _increaseQuantity(item.id),
+                                                () => _updateItemQuantity(
+                                                  item.id,
+                                                  item.quantidade,
+                                                  1,
+                                                ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'Total Item: R\$ ${(item.produto.preco * item.quantidade).toStringAsFixed(2)}',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.green,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ],
                                       ),
                                     ],
                                   ),
                                 ),
-                                // Remove Button
                                 IconButton(
-                                  icon: Icon(Icons.delete, color: Colors.red),
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
+                                  ),
                                   onPressed: () => _removeItem(item.id),
                                 ),
                               ],
@@ -206,28 +436,19 @@ class CartScreenState extends State<CartScreen> {
                       },
                     ),
                   ),
-                  // --- Cart Summary at the bottom ---
-                  Divider(height: 1, color: Colors.grey),
+                  Divider(
+                    height: 1,
+                    color: Colors.grey[300],
+                  ),
                   Container(
-                    padding: EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 5,
-                          offset: Offset(0, -2),
-                        ),
-                      ],
-                    ),
+                    padding: const EdgeInsets.all(16),
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Total:',
+                            const Text(
+                              'Total do Pedido:',
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -238,28 +459,32 @@ class CartScreenState extends State<CartScreen> {
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.green,
+                                color: Colors.green[700],
                               ),
                             ),
                           ],
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         SizedBox(
                           width: double.infinity,
-                          child: ElevatedButton(
+                          child: ElevatedButton.icon(
                             onPressed: () {
-                              // Implement checkout logic here
-                              print('Proceed to Checkout!');
+                              _showSnackBar(
+                                'Finalizar Pedido (Lógica a ser implementada)!',
+                              );
+                              // ADICIONE A LÓGICA PARA FINALIZAR O PEDIDO AQUI
+                              // Ex: Navegar para uma tela de pagamento, enviar pedido para a API, etc.
                             },
                             style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(vertical: 12),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              backgroundColor:
-                                  Colors.blueAccent, // Button color
+                              backgroundColor: Colors.orange,
+                              foregroundColor: Colors.white,
                             ),
-                            child: Text(
+                            icon: const Icon(Icons.payment),
+                            label: const Text(
                               'Finalizar Pedido',
                               style: TextStyle(
                                 fontSize: 18,
@@ -277,23 +502,6 @@ class CartScreenState extends State<CartScreen> {
   }
 }
 
-// --- How to use this in your main.dart or other file ---
-void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Shopping Cart Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
-      home: CartScreen(), // Set CartScreen as the home screen
-    );
-  }
-}
+// REMOVIDA A EXTENSÃO PROBLEMÁTICA QUE ESTAVA ANULANDO A IMAGEM URL.
+// CERTIFIQUE-SE DE QUE SEU 'ProdutoModel' TEM UM CAMPO 'imagemUrl' (String?)
+// e que ele está sendo corretamente desserializado no 'ProdutoModel.fromJson'.
