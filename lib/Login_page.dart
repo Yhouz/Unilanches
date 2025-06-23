@@ -5,6 +5,7 @@ import 'package:unilanches/cliente/home_pageClient.dart';
 import 'package:unilanches/funcionario/home_pageFuncionairio.dart';
 import 'package:unilanches/register_page.dart';
 import 'package:unilanches/src/get/user_valider.dart';
+import 'package:unilanches/recupera_senha_pega.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -248,41 +249,69 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 SizedBox(height: 20),
 
-                Row(
+                Column(
                   children: [
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (formKey.currentState!.validate()) {
-                          await loginVerific();
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.black,
-                        backgroundColor: Colors.blue,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                            50,
-                          ), // Borda arredondada
+                    Row(
+                      children: [
+                        ElevatedButton(
+                          onPressed: () async {
+                            if (formKey.currentState!.validate()) {
+                              await loginVerific();
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.black,
+                            backgroundColor: Colors.blue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                50,
+                              ), // Borda arredondada
+                            ),
+                          ),
+                          child: const Text(
+                            'Entrar',
+                            style: TextStyle(fontSize: 20),
+                          ),
                         ),
-                      ),
-                      child: const Text(
-                        'Entrar',
-                        style: TextStyle(fontSize: 20),
-                      ),
+                        SizedBox(width: 20), // Espaçamento entre os botões
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => RegisterPage(),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.black,
+                            backgroundColor: Colors.red,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                50,
+                              ), // Borda arredondada
+                            ),
+                          ),
+                          child: Text(
+                            'Cadastrar',
+                            style: TextStyle(fontSize: 20),
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(width: 20), // Espaçamento entre os botões
+                    SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => RegisterPage(),
+                            builder: (context) => RecuperarSenhaPage(),
                           ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.black,
-                        backgroundColor: Colors.red,
+                        backgroundColor: Colors.green,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(
                             50,
@@ -290,7 +319,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       child: Text(
-                        'Cadastrar',
+                        'Recuperar Senha',
                         style: TextStyle(fontSize: 20),
                       ),
                     ),
