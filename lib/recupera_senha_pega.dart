@@ -1,8 +1,11 @@
 // lib/src/pages/RecuperarSenhaPage.dart
-import 'dart:convert' show jsonDecode; // Importa apenas a função jsonDecode do pacote 'dart:convert'
+import 'dart:convert'
+    show
+        jsonDecode; // Importa apenas a função jsonDecode do pacote 'dart:convert'
 import 'package:flutter/material.dart'; // Importa o pacote essencial do Flutter para UI
 import 'package:unilanches/src/services/RecuperarSenha.dart'; // Importa sua classe de API
-import 'package:http/http.dart' as http; // Importa o pacote http para usar o tipo Response
+import 'package:http/http.dart'
+    as http; // Importa o pacote http para usar o tipo Response
 
 class RecuperarSenhaPage extends StatefulWidget {
   const RecuperarSenhaPage({super.key});
@@ -59,20 +62,28 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
           _senhaController.clear();
         });
       } else {
-        // Se o status não for 200, houve um erro da API.
+        // --- INÍCIO DAS ADIÇÕES PARA DEPURAR ---
+        print('Status Code de erro: ${response.statusCode}');
+        print('Corpo da resposta de erro: ${response.body}');
+        // --- FIM DAS ADIÇÕES PARA DEPURAR ---
+
         // Tenta decodificar o corpo da resposta, que deve ser um JSON com a mensagem de erro.
         var respostaJson = jsonDecode(response.body);
         setState(() {
-          // Define a mensagem de erro. A API deve retornar um JSON com uma chave 'erro'.
-          // Se 'erro' não existir, usa uma mensagem genérica.
-          mensagem = respostaJson['erro'] ?? 'Erro ao atualizar senha. Por favor, tente novamente.';
+          // Define a mensagem de erro. Primeiro tenta 'erro', depois 'message', depois genérica.
+          // Seu backend retorna 'message', então 'respostaJson['message']' deve funcionar.
+          mensagem =
+              respostaJson['erro'] ??
+              respostaJson['message'] ??
+              'Erro ao atualizar senha. Por favor, tente novamente.';
         });
       }
     } catch (e) {
       // 6. Captura exceções (erros) que podem ocorrer durante a chamada da API
       // (ex: problema de rede, servidor offline, exceção lançada pelo 'throw Exception' na API).
       setState(() {
-        mensagem = 'Não foi possível conectar ao servidor. Verifique sua conexão com a internet.';
+        mensagem =
+            'Não foi possível conectar ao servidor. Verifique sua conexão com a internet.';
       });
     } finally {
       // 7. Este bloco é executado SEMPRE, independentemente de sucesso ou erro.
@@ -90,7 +101,9 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
         centerTitle: true, // Centraliza o título na barra de aplicativo.
       ),
       body: Padding(
-        padding: const EdgeInsets.all(24.0), // Adiciona preenchimento em toda a volta do conteúdo.
+        padding: const EdgeInsets.all(
+          24.0,
+        ), // Adiciona preenchimento em toda a volta do conteúdo.
         child: Column(
           // Centraliza os elementos verticalmente na tela.
           mainAxisAlignment: MainAxisAlignment.center,
@@ -100,26 +113,35 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
             Text(
               'Altere sua senha',
               // Estiliza o texto para ser um título com fonte maior e negrito.
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center, // Centraliza o texto.
             ),
-            const SizedBox(height: 30), // Espaço vertical entre o título e o primeiro campo.
-
+            const SizedBox(
+              height: 30,
+            ), // Espaço vertical entre o título e o primeiro campo.
             // Campo de entrada para o Email.
             TextField(
               controller: _emailController,
-              keyboardType: TextInputType.emailAddress, // Mostra o teclado otimizado para e-mails.
+              keyboardType:
+                  TextInputType
+                      .emailAddress, // Mostra o teclado otimizado para e-mails.
               decoration: InputDecoration(
                 labelText: 'Email', // Rótulo acima do campo.
                 hintText: 'Digite seu email', // Texto de dica dentro do campo.
-                border: OutlineInputBorder( // Adiciona uma borda arredondada ao redor do campo.
+                border: OutlineInputBorder(
+                  // Adiciona uma borda arredondada ao redor do campo.
                   borderRadius: BorderRadius.circular(8.0),
                 ),
-                prefixIcon: const Icon(Icons.email), // Ícone de e-mail dentro do campo.
+                prefixIcon: const Icon(
+                  Icons.email,
+                ), // Ícone de e-mail dentro do campo.
               ),
             ),
-            const SizedBox(height: 20), // Espaço entre o campo de email e o de senha.
-
+            const SizedBox(
+              height: 20,
+            ), // Espaço entre o campo de email e o de senha.
             // Campo de entrada para a Nova Senha.
             TextField(
               controller: _senhaController,
@@ -134,34 +156,44 @@ class _RecuperarSenhaPageState extends State<RecuperarSenhaPage> {
               ),
             ),
             const SizedBox(height: 30), // Espaço antes do botão de ação.
-
             // Exibe um indicador de carregamento ou o botão, dependendo do estado.
             _isLoading
-                ? const Center(child: CircularProgressIndicator()) // Mostra uma bolinha de carregamento.
+                ? const Center(
+                  child: CircularProgressIndicator(),
+                ) // Mostra uma bolinha de carregamento.
                 : ElevatedButton(
-                    onPressed: enviarRecuperacao, // Chama a função quando o botão é clicado.
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 15.0), // Aumenta o tamanho do botão.
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0), // Cantos arredondados para o botão.
-                      ),
-                      elevation: 5, // Adiciona uma pequena sombra para um efeito 3D.
+                  onPressed:
+                      enviarRecuperacao, // Chama a função quando o botão é clicado.
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 15.0,
+                    ), // Aumenta o tamanho do botão.
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        8.0,
+                      ), // Cantos arredondados para o botão.
                     ),
-                    child: const Text(
-                      'Alterar Senha',
-                      style: TextStyle(fontSize: 18), // Aumenta o tamanho da fonte do texto do botão.
-                    ),
+                    elevation:
+                        5, // Adiciona uma pequena sombra para um efeito 3D.
                   ),
+                  child: const Text(
+                    'Alterar Senha',
+                    style: TextStyle(
+                      fontSize: 18,
+                    ), // Aumenta o tamanho da fonte do texto do botão.
+                  ),
+                ),
             const SizedBox(height: 15), // Espaço abaixo do botão.
-
             // Exibe a mensagem de feedback (sucesso ou erro) ao usuário.
-            if (mensagem.isNotEmpty) // Só mostra o Text se a mensagem não estiver vazia.
+            if (mensagem
+                .isNotEmpty) // Só mostra o Text se a mensagem não estiver vazia.
               Text(
                 mensagem,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   // A cor do texto muda para verde em caso de sucesso, vermelho em caso de erro.
-                  color: mensagem.contains('sucesso') ? Colors.green : Colors.red,
+                  color:
+                      mensagem.contains('sucesso') ? Colors.green : Colors.red,
                   fontWeight: FontWeight.bold, // Deixa a mensagem em negrito.
                   fontSize: 16,
                 ),
