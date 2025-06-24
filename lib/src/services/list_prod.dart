@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:unilanches/src/models/produto_model.dart'; // Importe o ProdutoModel completo
 
 class ProdutoListApi {
-  final String baseUrl = 'https://api-a35y.onrender.com/api/produtos/';
+  final String baseUrl = 'http://127.0.0.1:8000/api/produtos/';
 
   Future<List<ProdutoModel>> listarProdutos() async {
     final url = Uri.parse(baseUrl);

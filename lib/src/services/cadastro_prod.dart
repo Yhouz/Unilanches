@@ -8,7 +8,7 @@ class ProdutoApi {
   // Use 10.0.2.2 para Emulador Android, localhost para web, ou o IP da sua máquina para dispositivo físico
   // final String baseUrl = 'http://10.0.2.2:8000/api/produtos/'; // Para Emulador Android
   final String baseUrl =
-      'https://api-a35y.onrender.com/api/produtos/'; // Para Web ou máquina local
+      'http://127.0.0.1:8000/api/produtos/'; // Para Web ou máquina local
 
   Future<String?> cadastrarProduto(
     ProdutoModel produto,

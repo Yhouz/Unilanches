@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Importar shared_preferences
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:collection/collection.dart'; // ✅ Importação para firstWhereOrNull
 
 import 'package:unilanches/src/services/carrinho_service.dart';
 import 'package:unilanches/src/models/carrinho_model.dart';
-
-// Importar ItemCarrinhoModel
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -15,7 +14,7 @@ class CartScreen extends StatefulWidget {
 
 class CartScreenState extends State<CartScreen> {
   final CarrinhoService _service = CarrinhoService();
-  CarrinhoModel? _carrinho; // Removido 'late', inicializado como null
+  CarrinhoModel? _carrinho;
   bool _loading = true;
   String? _error;
   int? _currentCarrinhoId; // Para armazenar o ID do carrinho ativo
@@ -23,11 +22,9 @@ class CartScreenState extends State<CartScreen> {
   @override
   void initState() {
     super.initState();
-    _loadAndFetchCarrinho(); // Chamada inicial para carregar ID e buscar/criar carrinho
+    _loadAndFetchCarrinho();
   }
 
-  // Esta função é responsável por carregar o ID do carrinho salvo,
-  // buscar o carrinho na API, ou criar um novo se não houver um.
   Future<void> _loadAndFetchCarrinho() async {
     setState(() {
       _loading = true;
@@ -36,39 +33,91 @@ class CartScreenState extends State<CartScreen> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      _currentCarrinhoId = prefs.getInt('carrinhoId');
+      _currentCarrinhoId = prefs.getInt(
+        'carrinhoId',
+      ); // Tenta carregar um ID salvo
 
-      const int testUserId = 1;
+      CarrinhoModel?
+      foundCarrinho; // Variável para armazenar o carrinho encontrado/criado
 
-      CarrinhoModel fetchedCarrinho;
-
+      // 1. Tentar buscar o carrinho pelo ID salvo (se existir)
       if (_currentCarrinhoId != null) {
         try {
-          fetchedCarrinho = await _service.buscarCarrinhoPorId(
+          final fetchedByIdCarrinho = await _service.buscarCarrinhoPorId(
             _currentCarrinhoId!,
           );
+          // Verificar se o carrinho retornado pelo ID está 'em aberto'
+          if (!fetchedByIdCarrinho.finalizado) {
+            foundCarrinho = fetchedByIdCarrinho;
+            print(
+              'DEBUG: Carrinho (ID: $_currentCarrinhoId) salvo encontrado e está em aberto.',
+            );
+          } else {
+            print(
+              'DEBUG: Carrinho (ID: $_currentCarrinhoId) salvo está finalizado. Desconsiderando.',
+            );
+            await prefs.remove(
+              'carrinhoId',
+            ); // Remove o ID do carrinho finalizado
+            _currentCarrinhoId = null; // Limpa a variável local também
+          }
         } catch (e) {
+          // Se a busca pelo ID salvo falhar (404 Not Found, 403 Forbidden, etc.)
           print(
-            'Carrinho salvo ($_currentCarrinhoId) não encontrado. Criando novo...',
+            'DEBUG: Carrinho (ID: $_currentCarrinhoId) salvo não encontrado ou inacessível. Removendo ID salvo.',
           );
-          fetchedCarrinho = await _service.criarCarrinho(testUserId);
+          await prefs.remove('carrinhoId'); // Limpa o ID que deu erro
+          _currentCarrinhoId = null; // Zera a variável local também
         }
-      } else {
-        print('Nenhum carrinhoId salvo. Criando novo...');
-        fetchedCarrinho = await _service.criarCarrinho(testUserId);
       }
 
-      _carrinho = fetchedCarrinho;
+      // 2. Se nenhum carrinho válido foi encontrado pelo ID salvo, tentar listar carrinhos abertos
+      if (foundCarrinho == null) {
+        print('DEBUG: Buscando por carrinhos abertos na API...');
+        final allCarrinhos = await _service.listarCarrinhos();
+        // Filtra para encontrar o primeiro carrinho que não está finalizado
+        final openCarrinho = allCarrinhos.firstWhereOrNull(
+          (c) => !c.finalizado,
+        );
+
+        if (openCarrinho != null) {
+          foundCarrinho = openCarrinho;
+          print(
+            'DEBUG: Carrinho em aberto encontrado na API (ID: ${foundCarrinho.id}).',
+          );
+        } else {
+          print('DEBUG: Nenhum carrinho em aberto encontrado na API.');
+        }
+      }
+
+      // 3. Se ainda nenhum carrinho foi encontrado, criar um novo
+      if (foundCarrinho == null) {
+        print(
+          'DEBUG: Nenhum carrinho em aberto encontrado ou salvo. Criando novo...',
+        );
+        foundCarrinho = await _service.criarCarrinho();
+        print('DEBUG: Novo carrinho criado (ID: ${foundCarrinho.id}).');
+      }
+
+      // Salvar o ID do carrinho encontrado/criado para uso futuro
+      _carrinho = foundCarrinho;
       _currentCarrinhoId = _carrinho!.id;
       await prefs.setInt('carrinhoId', _currentCarrinhoId!);
+      print(
+        'DEBUG: ID do carrinho ativo salvo para a sessão: $_currentCarrinhoId',
+      );
+
+      if (!mounted) return;
       _showSnackBar('Carrinho carregado/criado com sucesso!');
     } catch (e) {
       _error = 'Erro ao carregar carrinho: $e';
-      print('Erro: $_error');
+      print('ERRO: $_error');
     } finally {
-      setState(() {
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -78,21 +127,32 @@ class CartScreenState extends State<CartScreen> {
       _loading = true;
       _error = null;
     });
+
     try {
       if (_currentCarrinhoId != null) {
-        // Usa o ID dinâmico do carrinho
-        // Reintroduzindo o cast explícito para CarrinhoModel?
-        _carrinho =
-            (await _service.buscarCarrinhoPorId(_currentCarrinhoId!))
-                as CarrinhoModel?;
+        // Busca o carrinho pelo ID
+        _carrinho = await _service.buscarCarrinhoPorId(_currentCarrinhoId!);
+        // Se o carrinho foi finalizado por fora (ex: outro dispositivo), vamos tratá-lo como "não encontrado"
+        if (_carrinho!.finalizado) {
+          print(
+            'DEBUG: Carrinho ID $_currentCarrinhoId foi finalizado. Buscando/Criando novo.',
+          );
+          await _loadAndFetchCarrinho(); // Tentar novamente desde o início
+        } else {
+          print('DEBUG: Carrinho ID $_currentCarrinhoId recarregado.');
+        }
       } else {
-        // Se por algum motivo _currentCarrinhoId estiver nulo aqui (não deveria após _loadAndFetchCarrinho),
-        // chame a lógica de carregamento inicial novamente para garantir que um ID seja obtido.
+        // Se não tem ID, tenta criar/carregar de novo (chama a lógica completa)
+        print(
+          'DEBUG: _currentCarrinhoId é nulo em _fetchCarrinho. Chamando _loadAndFetchCarrinho.',
+        );
         await _loadAndFetchCarrinho();
       }
     } catch (e) {
       _error = 'Erro ao recarregar carrinho: $e';
-      print('Erro detalhado em _fetchCarrinho: $_error');
+      print('ERRO detalhado em _fetchCarrinho: $_error');
+      // Se houver um erro ao buscar o carrinho específico, força uma nova busca/criação
+      await _loadAndFetchCarrinho();
     } finally {
       setState(() {
         _loading = false;
@@ -104,19 +164,18 @@ class CartScreenState extends State<CartScreen> {
     return _carrinho?.totalValor ?? 0;
   }
 
-  // Remove um item do carrinho
   void _removeItem(int itemId) async {
     if (_currentCarrinhoId == null) {
       _showSnackBar('Nenhum carrinho ativo.');
       return;
     }
     setState(() {
-      _loading = true; // Mostra indicador de carregamento
+      _loading = true;
     });
     try {
       await _service.deletarItemCarrinho(itemId);
       _showSnackBar('Item removido do carrinho.');
-      await _fetchCarrinho(); // Recarrega o carrinho para atualizar a UI e o total
+      await _fetchCarrinho();
     } catch (e) {
       _showSnackBar('Erro ao remover item: $e');
     } finally {
@@ -126,7 +185,6 @@ class CartScreenState extends State<CartScreen> {
     }
   }
 
-  // Atualiza a quantidade de um item no carrinho
   void _updateItemQuantity(int itemId, int currentQuantity, int change) async {
     if (_currentCarrinhoId == null) {
       _showSnackBar('Nenhum carrinho ativo.');
@@ -135,12 +193,10 @@ class CartScreenState extends State<CartScreen> {
 
     final newQuantity = currentQuantity + change;
     if (newQuantity < 0) {
-      // Não permite quantidade negativa
       _showSnackBar('A quantidade não pode ser negativa.');
       return;
     }
     if (newQuantity == 0) {
-      // Se a nova quantidade for zero, pergunta ao usuário se deseja remover o item
       bool? confirmRemove = await showDialog<bool>(
         context: context,
         builder: (BuildContext dialogContext) {
@@ -165,18 +221,18 @@ class CartScreenState extends State<CartScreen> {
         },
       );
       if (confirmRemove == true) {
-        _removeItem(itemId); // Chama a função de remover item
+        _removeItem(itemId);
       }
-      return; // Sai da função após o tratamento de quantidade zero
+      return;
     }
 
     setState(() {
-      _loading = true; // Mostra indicador de carregamento
+      _loading = true;
     });
     try {
       await _service.editarItemCarrinho(itemId, newQuantity);
       _showSnackBar('Quantidade atualizada para $newQuantity.');
-      await _fetchCarrinho(); // Recarrega o carrinho para atualizar a UI e o total
+      await _fetchCarrinho();
     } catch (e) {
       _showSnackBar('Erro ao atualizar quantidade: $e');
     } finally {
@@ -186,13 +242,12 @@ class CartScreenState extends State<CartScreen> {
     }
   }
 
-  // Limpa todos os itens do carrinho ativo
   void _clearCart() async {
     if (_currentCarrinhoId == null) {
       _showSnackBar('Nenhum carrinho ativo para limpar.');
       return;
     }
-    // Adiciona uma confirmação antes de limpar o carrinho completamente
+
     bool? confirmClear = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -221,13 +276,12 @@ class CartScreenState extends State<CartScreen> {
 
     if (confirmClear == true) {
       setState(() {
-        _loading = true; // Mostra indicador de carregamento
+        _loading = true;
       });
       try {
-        // Usa o ID dinâmico do carrinho
         await _service.limparCarrinho(_currentCarrinhoId!);
         _showSnackBar('Carrinho limpo com sucesso!');
-        await _fetchCarrinho(); // Recarrega o carrinho para atualizar a UI
+        await _fetchCarrinho();
       } catch (e) {
         _showSnackBar('Erro ao limpar carrinho: $e');
       } finally {
@@ -238,9 +292,7 @@ class CartScreenState extends State<CartScreen> {
     }
   }
 
-  // Função auxiliar para exibir SnackBar de forma segura
   void _showSnackBar(String message) {
-    // Garante que o widget ainda está montado antes de mostrar o SnackBar
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
@@ -258,12 +310,11 @@ class CartScreenState extends State<CartScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed:
-                _fetchCarrinho, // Botão de refresh para recarregar o carrinho
+            onPressed: _fetchCarrinho,
           ),
           IconButton(
             icon: const Icon(Icons.delete_sweep),
-            onPressed: _clearCart, // Botão para limpar o carrinho
+            onPressed: _clearCart,
           ),
         ],
       ),
@@ -271,10 +322,9 @@ class CartScreenState extends State<CartScreen> {
           _loading
               ? const Center(
                 child: CircularProgressIndicator(),
-              ) // Indicador de carregamento
+              )
               : _error != null
               ? Center(
-                // Exibe mensagem de erro se houver
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -294,8 +344,7 @@ class CartScreenState extends State<CartScreen> {
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed:
-                          _loadAndFetchCarrinho, // Tentar novamente (carrega/cria)
+                      onPressed: _loadAndFetchCarrinho,
                       child: const Text('Tentar Novamente'),
                     ),
                   ],
@@ -303,7 +352,6 @@ class CartScreenState extends State<CartScreen> {
               )
               : _carrinho == null || _carrinho!.itens.isEmpty
               ? Center(
-                // Exibe mensagem de carrinho vazio
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -321,7 +369,6 @@ class CartScreenState extends State<CartScreen> {
                 ),
               )
               : Column(
-                // Exibe os itens do carrinho se houver
                 children: [
                   Expanded(
                     child: ListView.builder(
@@ -338,7 +385,6 @@ class CartScreenState extends State<CartScreen> {
                             padding: const EdgeInsets.all(8.0),
                             child: Row(
                               children: [
-                                // Imagem do produto
                                 Container(
                                   width: 80,
                                   height: 80,
@@ -346,8 +392,6 @@ class CartScreenState extends State<CartScreen> {
                                     borderRadius: BorderRadius.circular(8),
                                     image: DecorationImage(
                                       image: NetworkImage(
-                                        // Usa 'item.produto.imagemUrl' que deve vir do ProdutoModel
-                                        // Se for nulo, usa um placeholder
                                         item.produto.imagemUrl ??
                                             'https://via.placeholder.com/150',
                                       ),
@@ -356,7 +400,6 @@ class CartScreenState extends State<CartScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 16),
-                                // Detalhes e Controles de Quantidade
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -472,8 +515,6 @@ class CartScreenState extends State<CartScreen> {
                               _showSnackBar(
                                 'Finalizar Pedido (Lógica a ser implementada)!',
                               );
-                              // ADICIONE A LÓGICA PARA FINALIZAR O PEDIDO AQUI
-                              // Ex: Navegar para uma tela de pagamento, enviar pedido para a API, etc.
                             },
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -501,7 +542,3 @@ class CartScreenState extends State<CartScreen> {
     );
   }
 }
-
-// REMOVIDA A EXTENSÃO PROBLEMÁTICA QUE ESTAVA ANULANDO A IMAGEM URL.
-// CERTIFIQUE-SE DE QUE SEU 'ProdutoModel' TEM UM CAMPO 'imagemUrl' (String?)
-// e que ele está sendo corretamente desserializado no 'ProdutoModel.fromJson'.

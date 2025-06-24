@@ -43,11 +43,15 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
   Future<void> _loadCarrinhoId() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _currentCarrinhoId = prefs.getInt('carrinhoId'); // Tenta obter o ID salvo
+      _currentCarrinhoId = prefs.getInt('carrinhoId');
 
-      // Para fins de teste local, você pode mudar este ID ou obtê-lo de outra fonte.
-      // Em uma aplicação real, este ID viria do usuário logado.
-      int testUserId = 1; // ID de usuário temporário para teste
+      final usuarioId = prefs.getInt('usuarioId');
+      if (usuarioId == null) {
+        setState(() {
+          erro = 'Usuário não logado. Por favor, faça login novamente.';
+        });
+        return;
+      }
 
       CarrinhoModel? fetchedCarrinho;
 
@@ -60,33 +64,15 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
           print(
             'Carrinho salvo ($_currentCarrinhoId) não encontrado. Tentando criar um novo...',
           );
-          fetchedCarrinho = await _carrinhoService.criarCarrinho(
-            testUserId,
-          ); // Usa o ID de teste
+          fetchedCarrinho = await _carrinhoService.criarCarrinho();
         }
       } else {
-        print('Nenhum carrinhoId salvo. Tentando criar um novo carrinho...');
-        fetchedCarrinho = await _carrinhoService.criarCarrinho(
-          testUserId,
-        ); // Usa o ID de teste
+        print('Nenhum carrinhoId salvo. Criando novo carrinho...');
+        fetchedCarrinho = await _carrinhoService.criarCarrinho();
       }
 
-      // ignore: unnecessary_null_comparison
-      if (fetchedCarrinho != null) {
-        _currentCarrinhoId = fetchedCarrinho.id;
-        await prefs.setInt(
-          'carrinhoId',
-          _currentCarrinhoId!,
-        ); // Salva o ID recém-obtido/criado
-        // Opcional: _showSnackBar('Carrinho (ID: $_currentCarrinhoId) pronto para uso.');
-      } else {
-        // Trate a falha crítica aqui se não conseguir obter/criar um carrinho
-        print('Falha crítica: Não foi possível obter ou criar um carrinho.');
-        // Pode ser útil mostrar um erro persistente ou redirecionar o usuário
-        setState(() {
-          erro = 'Erro crítico ao inicializar o carrinho. Tente novamente.';
-        });
-      }
+      _currentCarrinhoId = fetchedCarrinho.id;
+      await prefs.setInt('carrinhoId', _currentCarrinhoId!);
     } catch (e) {
       setState(() {
         erro = 'Erro ao inicializar o carrinho: $e';
@@ -472,20 +458,16 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
   }
 
   void _adicionarAoCarrinho(ProdutoModel produto) async {
-    // Verifica se temos um ID de carrinho válido
     if (_currentCarrinhoId == null) {
-      _showSnackBar(
-        'Erro: Carrinho não inicializado. Tente recarregar a página.',
-      );
+      _showSnackBar('Erro: Carrinho não inicializado.');
       return;
     }
 
     try {
-      // Usa o ID do carrinho obtido dinamicamente
       await _carrinhoService.adicionarItemCarrinho(
-        carrinhoId: _currentCarrinhoId!, // Usando o ID dinâmico
-        produtoId: produto.id!, // Assumindo que produto.id não é nulo
-        quantidade: 1, // Adiciona 1 unidade por padrão
+        carrinhoId: _currentCarrinhoId!,
+        produtoId: produto.id!,
+        quantidade: 1,
       );
       _showSnackBar('${produto.nome} adicionado ao carrinho!');
     } catch (e) {
@@ -502,7 +484,3 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
     }
   }
 }
-
-// REMOVIDA A EXTENSÃO PROBLEMÁTICA QUE ESTAVA ANULANDO A IMAGEM URL.
-// CERTIFIQUE-SE DE QUE SEU 'ProdutoModel' TEM UM CAMPO 'imagemUrl' (String?)
-// e que ele está sendo corretamente desserializado no 'ProdutoModel.fromJson'.

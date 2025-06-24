@@ -4,8 +4,7 @@ import 'package:unilanches/src/models/cadastro_fornecedor_model.dart';
 
 class FornecedorApi {
   // Ajuste a URL conforme seu ambiente de teste!
-  final String baseUrl =
-      'https://api-a35y.onrender.com/api/fornecedores/criar/';
+  final String baseUrl = 'http://127.0.0.1:8000/api/criar/';
 
   Future<CadastrarFornecedorModel?> cadastrarFornecedor(
     CadastrarFornecedorModel fornecedor,
