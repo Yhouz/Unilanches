@@ -52,7 +52,7 @@ class AuthServiceWeb {
     }
 
     final url = Uri.parse(
-      'http://127.0.0.1:8000/api/token/refresh/',
+      'https://api-a35y.onrender.com/api/refresh/',
     );
     try {
       final response = await http.post(

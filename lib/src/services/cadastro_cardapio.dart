@@ -7,9 +7,9 @@ import '../models/cadastro_cardapio.dart'
     show CardapioModel; // Mantenha essa importação
 
 class CardapioApiService {
-  static const String baseUrl = 'http://127.0.0.1:8000/api/cardapios/';
+  static const String baseUrl = 'https://api-a35y.onrender.com/api/cardapios/';
   static const String produtosBaseUrl =
-      'http://127.0.0.1:8000/api/produtos/';
+      'https://api-a35y.onrender.com/api/produtos/';
 
   // Buscar cardápio do dia
   Future<CardapioModel?> buscarCardapioDoDia() async {

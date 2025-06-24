@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+//import 'package:shared_preferences/shared_preferences.dart';
 import 'package:unilanches/src/models/carrinho_model.dart';
 import 'package:unilanches/src/models/item_carrinho_model.dart';
 import 'package:unilanches/src/services/auth_service.dart';
 
 class CarrinhoService {
-  final String baseUrl = 'http://127.0.0.1:8000/api';
+  final String baseUrl = 'https://api-a35y.onrender.com/api/';
 
   Future<Map<String, String>> _getAuthHeaders() async {
     final token = await AuthServiceWeb.getAccessToken();
