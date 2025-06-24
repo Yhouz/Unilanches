@@ -6,7 +6,7 @@ import 'package:unilanches/src/models/item_carrinho_model.dart';
 import 'package:unilanches/src/services/auth_service.dart';
 
 class CarrinhoService {
-  final String baseUrl = 'https://api-a35y.onrender.com/api/';
+  final String baseUrl = 'https://api-a35y.onrender.com/api';
 
   Future<Map<String, String>> _getAuthHeaders() async {
     final token = await AuthServiceWeb.getAccessToken();
