@@ -5,7 +5,7 @@ import 'package:unilanches/src/models/item_carrinho_model.dart';
 import 'package:unilanches/src/services/auth_service.dart';
 
 class CarrinhoService {
-  final String baseUrl = 'http://127.0.0.1:8000/api';
+  final String baseUrl = 'https://api-a35y.onrender.com/api';
 
   Future<http.Response> _apiCall(
     Future<http.Response> Function(Map<String, String> headers) apiRequest,

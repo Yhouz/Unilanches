@@ -5,7 +5,7 @@ import 'package:unilanches/src/models/pedido_models.dart' show PedidoModel;
 import 'package:unilanches/src/services/auth_service.dart';
 
 class PedidoService {
-  final String baseUrl = 'http://127.0.0.1:8000/api';
+  final String baseUrl = 'https://api-a35y.onrender.com/api';
 
   Future<http.Response> _apiCall(
     Future<http.Response> Function(Map<String, String> headers) apiRequest,

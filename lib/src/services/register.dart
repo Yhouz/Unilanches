@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:unilanches/src/models/resgister_model.dart';
 
 class RegisterApi {
-  final String baseUrl = 'http://127.0.0.1:8000/api/cadastro/';
+  final String baseUrl = 'https://api-a35y.onrender.com/api/cadastro/';
 
   Future<http.Response> createUser(RegisterModel user) async {
     try {

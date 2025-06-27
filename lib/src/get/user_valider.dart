@@ -7,7 +7,7 @@ Future<bool> verificarLogin(
   String senha,
   String tipoUsuario,
 ) async {
-  final url = Uri.parse('http://127.0.0.1:8000/api/login/');
+  final url = Uri.parse('https://api-a35y.onrender.com/api/login/');
 
   try {
     final response = await http.post(

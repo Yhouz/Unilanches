@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http; // Para fazer requisições HTTP
 class RecuperarSenhaApi {
   // A URL do seu endpoint de recuperação de senha.
   // Certifique-se de que esta URL está correta e acessível.
-  final String baseUrl = 'http://127.0.0.1:8000/api/recuperar-senha/';
+  final String baseUrl = 'https://api-a35y.onrender.com/api/recuperar-senha/';
 
   /// Envia uma requisição POST para a API para recuperar/alterar a senha de um usuário.
   ///
