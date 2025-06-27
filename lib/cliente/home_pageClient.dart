@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:unilanches/cliente/cardapioPage.dart';
 import 'package:unilanches/cliente/carteira.dart';
+import 'package:unilanches/cliente/lista_pedidos.dart';
 
 class HomePageclient extends StatefulWidget {
   final double saldo;
@@ -126,9 +127,12 @@ class _HomePageclientState extends State<HomePageclient> {
                         ),
                         OutlinedButton(
                           onPressed: () {
-                            setState(() {
-                              reservar = !reservar;
-                            });
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ListaPedidos(),
+                              ),
+                            );
                           },
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
@@ -138,7 +142,7 @@ class _HomePageclientState extends State<HomePageclient> {
                             side: const BorderSide(color: Colors.white),
                           ),
                           child: const Text(
-                            'Fazer Reserva',
+                            'Ver Pedidos',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,

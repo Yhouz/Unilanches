@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:unilanches/src/models/edit_prod_model.dart'; // Certifique-se de que EditProdModel tem um toJson()
 
 class ProdutoEditApi {
-  final String baseUrl = 'https://api-a35y.onrender.com/api/editar/';
+  final String baseUrl = 'http://127.0.0.1:8000/api/editar/';
 
   // Mude o tipo de retorno para Future<bool>
   Future<bool> editProd(EditProdModel produto) async {

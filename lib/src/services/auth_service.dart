@@ -1,86 +1,53 @@
-// lib/src/services/auth_service_web.dart
-import 'dart:convert' show jsonEncode, json;
-import 'dart:html' as html;
-
-import 'package:http/http.dart' as http show post;
-import 'package:shared_preferences/shared_preferences.dart'; // ✅ Importar SharedPreferences
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthServiceWeb {
-  static const _accessTokenKey = 'access_token';
-  static const _refreshTokenKey = 'refresh_token';
+  static const String _baseUrl = 'http://127.0.0.1:8000/api';
 
-  // Salva ambos os tokens após um login bem-sucedido
-  static Future<void> salvarTokens(
+  static Future<void> saveTokens(
     String accessToken,
     String refreshToken,
   ) async {
-    html.window.localStorage[_accessTokenKey] = accessToken;
-    html.window.localStorage[_refreshTokenKey] = refreshToken;
-    print('Tokens salvos no localStorage.');
-  }
-
-  // Recupera o Access Token para uso em requisições protegidas
-  static Future<String?> getAccessToken() async {
-    final token = html.window.localStorage[_accessTokenKey];
-    return token;
-  }
-
-  // Recupera o Refresh Token para renovação ou logout
-  static Future<String?> getRefreshToken() async {
-    final token = html.window.localStorage[_refreshTokenKey];
-    return token;
-  }
-
-  // Limpa ambos os tokens (access/refresh) E o carrinhoId
-  static Future<void> limparTokens() async {
-    html.window.localStorage.remove(_accessTokenKey);
-    html.window.localStorage.remove(_refreshTokenKey);
-    print('Tokens de autenticação removidos do localStorage.');
-
-    // ✅ NOVO: Remover o ID do carrinho do SharedPreferences
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('carrinhoId');
-    print('ID do carrinho removido do SharedPreferences.');
+    await prefs.setString('accessToken', accessToken);
+    await prefs.setString('refreshToken', refreshToken);
   }
 
-  // --- Funções para renovação de token (opcional, mas recomendado) ---
-  static Future<bool> renovarAccessToken() async {
-    final refreshToken = await getRefreshToken();
+  static Future<String?> getAccessToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('accessToken');
+  }
+
+  static Future<String?> getRefreshToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('refreshToken');
+  }
+
+  static Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('accessToken');
+    await prefs.remove('refreshToken');
+  }
+
+  static Future<void> refreshToken() async {
+    final String? refreshToken = await getRefreshToken();
     if (refreshToken == null) {
-      print('Não há Refresh Token para renovar.');
-      return false;
+      throw Exception('Refresh token não encontrado.');
     }
 
-    final url = Uri.parse(
-      'https://api-a35y.onrender.com/api/refresh/',
+    final response = await http.post(
+      Uri.parse('$_baseUrl/token/refresh/'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'refresh': refreshToken}),
     );
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refresh': refreshToken}),
-      );
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final newAccessToken = data['access'];
-        final newRefreshToken =
-            data.containsKey('refresh') ? data['refresh'] : refreshToken;
-
-        await salvarTokens(newAccessToken, newRefreshToken);
-        print('Access Token renovado com sucesso!');
-        return true;
-      } else {
-        print(
-          'Falha ao renovar token (${response.statusCode}): ${response.body}',
-        );
-        await limparTokens(); // Limpar tudo se o refresh token falhar
-        return false;
-      }
-    } catch (e) {
-      print('Erro na requisição de renovação de token: $e');
-      await limparTokens(); // Limpar tudo em caso de erro de rede
-      return false;
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      await saveTokens(data['access'], refreshToken);
+    } else {
+      await logout();
+      throw Exception('Sessão expirada. Falha ao renovar token.');
     }
   }
 }

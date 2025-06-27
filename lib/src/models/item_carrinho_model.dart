@@ -1,31 +1,39 @@
+// lib/src/models/item_carrinho_model.dart
+
 import 'package:unilanches/src/models/produto_model.dart' show ProdutoModel;
 
 class ItemCarrinhoModel {
-  final int id;
+  final int
+  id; // Este ID deve ser o ID do item do pedido no banco de dados, se for persistido.
   final ProdutoModel produto;
   final int quantidade;
-  final double subtotal;
+  final double valorItem; // Este é o subtotal do item no pedido
 
   ItemCarrinhoModel({
     required this.id,
     required this.produto,
     required this.quantidade,
-    required this.subtotal,
+    required this.valorItem,
   });
 
   factory ItemCarrinhoModel.fromJson(Map<String, dynamic> json) {
     return ItemCarrinhoModel(
-      id: json['id'],
-      produto: ProdutoModel.fromJson(json['produto']),
-      quantidade: json['quantidade'],
-      subtotal: (json['subtotal'] as num).toDouble(),
+      id: json['id'] as int, // ✅ Garante que o ID do item é um int
+      produto: ProdutoModel.fromJson(
+        json['produto'],
+      ), // ✅ Mapeia o produto aninhado
+      quantidade:
+          json['quantidade'] as int, // ✅ Garante que a quantidade é um int
+      valorItem:
+          (json['subtotal'] as num)
+              .toDouble(), // ✅ Converte para double de forma segura
     );
   }
 
-  // Apenas para serializar para envio ao backend
+  // Este método toJson é para quando você CRIA um pedido (envia para o backend).
+  // Ele não precisa ser alterado para a tela de detalhes.
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
       'produto_id': produto.id,
       'quantidade': quantidade,
     };

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Importar shared_preferences
 import 'package:unilanches/src/models/carrinho_model.dart';
-import 'package:unilanches/src/models/cadastro_cardapio.dart'; // Importa seu CardapioModel
-import 'package:unilanches/src/models/produto_model.dart'; // Importa seu ProdutoModel
-import 'package:unilanches/src/services/cadastro_cardapio.dart'; // Importa seu CardapioApiService
-import 'package:unilanches/src/services/carrinho_service.dart'; // Importa seu CarrinhoService
-import 'package:unilanches/cliente/carrinhoCliente.dart'; // Importa sua CartScreen (verifique o caminho exato)
+import 'package:unilanches/src/models/cadastro_cardapio.dart';
+import 'package:unilanches/src/models/produto_model.dart';
+import 'package:unilanches/src/services/cadastro_cardapio.dart';
+import 'package:unilanches/src/services/carrinho_service.dart';
+import 'package:unilanches/cliente/carrinhoCliente.dart';
 
 class CardapioClientePage extends StatefulWidget {
   const CardapioClientePage({super.key});
@@ -21,72 +20,45 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
   String? erro;
   List<ProdutoModel> produtosSelecionados = [];
 
-  // Instância do CarrinhoService
   final CarrinhoService _carrinhoService = CarrinhoService();
-
-  // Variável para armazenar o ID do carrinho ativo
-  int? _currentCarrinhoId;
+  CarrinhoModel? _carrinho;
+  bool _isAddingToCart = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeData(); // Nova função para carregar dados e o ID do carrinho
+    _initializeData();
   }
 
-  // Inicializa o ID do carrinho e carrega o cardápio
   Future<void> _initializeData() async {
-    await _loadCarrinhoId(); // Primeiro, carregue o ID do carrinho
-    await _carregarCardapioDoDia(); // Em seguida, carregue o cardápio
+    if (mounted)
+      setState(() {
+        carregando = true;
+        erro = null;
+      });
+
+    try {
+      await Future.wait([
+        _carregarCardapioDoDia(),
+        // _loadOrCreateCarrinho(),
+      ]);
+    } catch (e) {
+      if (mounted) setState(() => erro = 'Erro ao carregar dados: $e');
+    } finally {
+      if (mounted) setState(() => carregando = false);
+    }
   }
 
-  // Função para carregar o ID do carrinho salvo ou criar um novo
-  Future<void> _loadCarrinhoId() async {
+  Future<void> _loadOrCreateCarrinho() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      _currentCarrinhoId = prefs.getInt('carrinhoId');
-
-      final usuarioId = prefs.getInt('usuarioId');
-      if (usuarioId == null) {
-        setState(() {
-          erro = 'Usuário não logado. Por favor, faça login novamente.';
-        });
-        return;
-      }
-
-      CarrinhoModel? fetchedCarrinho;
-
-      if (_currentCarrinhoId != null) {
-        try {
-          fetchedCarrinho = await _carrinhoService.buscarCarrinhoPorId(
-            _currentCarrinhoId!,
-          );
-        } catch (e) {
-          print(
-            'Carrinho salvo ($_currentCarrinhoId) não encontrado. Tentando criar um novo...',
-          );
-          fetchedCarrinho = await _carrinhoService.criarCarrinho();
-        }
-      } else {
-        print('Nenhum carrinhoId salvo. Criando novo carrinho...');
-        fetchedCarrinho = await _carrinhoService.criarCarrinho();
-      }
-
-      _currentCarrinhoId = fetchedCarrinho.id;
-      await prefs.setInt('carrinhoId', _currentCarrinhoId!);
+      final carrinho = await _carrinhoService.getOrCreateActiveCart();
+      if (mounted) setState(() => _carrinho = carrinho);
     } catch (e) {
-      setState(() {
-        erro = 'Erro ao inicializar o carrinho: $e';
-      });
-      print('Erro detalhado em _loadCarrinhoId: $e');
+      throw Exception('Falha ao obter o carrinho: $e');
     }
   }
 
   Future<void> _carregarCardapioDoDia() async {
-    setState(() {
-      carregando = true;
-      erro = null; // Limpa o erro ao tentar carregar novamente
-    });
-
     try {
       final apiService = CardapioApiService();
       final cardapio = await apiService.buscarCardapioDoDia();
@@ -95,36 +67,90 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
         final produtosCardapio = await apiService.buscarProdutosDoCardapio(
           cardapio.produtos,
         );
-
-        setState(() {
-          cardapioAtual = cardapio;
-          produtosSelecionados = produtosCardapio;
-          carregando = false;
-        });
+        if (mounted) {
+          setState(() {
+            cardapioAtual = cardapio;
+            produtosSelecionados = produtosCardapio;
+          });
+        }
       } else {
-        setState(() {
-          erro = 'Nenhum cardápio disponível para hoje';
-          carregando = false;
-        });
+        if (mounted)
+          setState(() => erro = 'Nenhum cardápio disponível para hoje');
       }
     } catch (e) {
-      setState(() {
-        erro = 'Erro ao carregar cardápio: $e';
-        carregando = false;
-      });
-      print('Erro detalhado em _carregarCardapioDoDia: $e');
+      throw Exception('Falha ao carregar o cardápio: $e');
     }
   }
 
-  // Função auxiliar para exibir SnackBar de forma segura
+  void _adicionarAoCarrinho(ProdutoModel produto) async {
+    // Validação de estoque continua sendo a primeira coisa. Ótimo.
+    if (produto.quantidadeEstoque <= 0) {
+      _showSnackBar('Desculpe, este produto está sem estoque.');
+      return;
+    }
+
+    // Mantenha isso para o feedback visual de carregamento
+    setState(() {
+      _isAddingToCart = true;
+    });
+
+    try {
+      // ✅ ESTA É A NOVA LÓGICA
+      // 1. Verificamos se já temos um carrinho no estado da página.
+      // Se não tiver (_carrinho for nulo), nós o buscamos ou criamos AGORA.
+      // O operador '??' significa: use o valor da esquerda se não for nulo, senão, use o da direita.
+      CarrinhoModel carrinhoParaUsar =
+          _carrinho ?? await _carrinhoService.getOrCreateActiveCart();
+
+      // 2. Com o carrinho garantido, agora sim adicionamos o item.
+      // Esta chamada de serviço retorna o carrinho mais recente, com o item já adicionado.
+      final carrinhoAtualizado = await _carrinhoService.adicionarItemCarrinho(
+        carrinhoId: carrinhoParaUsar.id,
+        produtoId: produto.id!,
+        quantidade: 1,
+      );
+
+      // 3. Atualizamos o estado da página com a versão final e mais recente do carrinho.
+      // Isso garante que, na próxima vez que o botão for clicado, _carrinho não será mais nulo.
+      if (mounted) {
+        setState(() {
+          _carrinho = carrinhoAtualizado;
+        });
+      }
+
+      _showSnackBar('${produto.nome} adicionado ao carrinho!');
+    } catch (e) {
+      _showSnackBar('Erro: $e');
+    } finally {
+      // Garante que o indicador de carregamento sempre será desativado.
+      if (mounted) {
+        setState(() {
+          _isAddingToCart = false;
+        });
+      }
+    }
+  }
+
   void _showSnackBar(String message) {
     if (mounted) {
-      // Verifica se o widget ainda está montado
+      ScaffoldMessenger.of(context).removeCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message)),
       );
     }
   }
+
+  String _formatarData(String data) {
+    try {
+      final date = DateTime.parse(data);
+      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    } catch (e) {
+      return data; // Retorna a data original se houver erro no parsing
+    }
+  }
+
+  // --- O resto do seu código (build, buildBody, buildProdutoCard, etc.) ---
+  // --- pode permanecer exatamente o mesmo. Nenhuma alteração é necessária lá. ---
 
   @override
   Widget build(BuildContext context) {
@@ -136,7 +162,7 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _initializeData, // Recarrega cardápio e ID do carrinho
+            onPressed: _initializeData, // Recarrega tudo
           ),
           TextButton.icon(
             onPressed: () {
@@ -145,10 +171,7 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
                 MaterialPageRoute(builder: (context) => const CartScreen()),
               );
             },
-            icon: const Icon(
-              Icons.shopping_cart,
-              color: Colors.white,
-            ),
+            icon: const Icon(Icons.shopping_cart, color: Colors.white),
             label: const Text(
               'Ir ao Carrinho',
               style: TextStyle(color: Colors.white),
@@ -162,16 +185,7 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
 
   Widget _buildBody() {
     if (carregando) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Carregando cardápio...'),
-          ],
-        ),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (erro != null) {
@@ -179,23 +193,12 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey[400],
-            ),
+            const Icon(Icons.error_outline, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
-            Text(
-              erro!,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
-              textAlign: TextAlign.center,
-            ),
+            Text(erro!, textAlign: TextAlign.center),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: _initializeData, // Tentar novamente (recarrega tudo)
+              onPressed: _initializeData,
               child: const Text('Tentar Novamente'),
             ),
           ],
@@ -218,7 +221,6 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
 
   Widget _buildCardapioHeader() {
     if (cardapioAtual == null) return const SizedBox.shrink();
-
     return Card(
       elevation: 4,
       child: Container(
@@ -246,18 +248,12 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
             const SizedBox(height: 8),
             Text(
               'Categoria: ${cardapioAtual!.categoria}',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.white70,
-              ),
+              style: const TextStyle(fontSize: 16, color: Colors.white70),
             ),
             const SizedBox(height: 4),
             Text(
               'Data: ${_formatarData(cardapioAtual!.data)}',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.white70,
-              ),
+              style: const TextStyle(fontSize: 16, color: Colors.white70),
             ),
           ],
         ),
@@ -274,16 +270,12 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
         ),
       );
     }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Produtos Disponíveis',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         ListView.builder(
@@ -309,7 +301,6 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              // Imagem do produto
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child:
@@ -342,7 +333,6 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
                         ),
               ),
               const SizedBox(width: 16),
-              // Informações do produto
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -358,10 +348,7 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
                       const SizedBox(height: 4),
                       Text(
                         produto.descricao!,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -375,7 +362,6 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
                         color: Colors.green[700],
                       ),
                     ),
-                    // Verifica se o campo existe no modelo
                     Padding(
                       padding: const EdgeInsets.only(top: 4.0),
                       child: Text(
@@ -390,7 +376,6 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
                   ],
                 ),
               ),
-              // Botão de ação
               IconButton(
                 onPressed: () => _adicionarAoCarrinho(produto),
                 icon: const Icon(Icons.add_shopping_cart),
@@ -455,32 +440,5 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
             ],
           ),
     );
-  }
-
-  void _adicionarAoCarrinho(ProdutoModel produto) async {
-    if (_currentCarrinhoId == null) {
-      _showSnackBar('Erro: Carrinho não inicializado.');
-      return;
-    }
-
-    try {
-      await _carrinhoService.adicionarItemCarrinho(
-        carrinhoId: _currentCarrinhoId!,
-        produtoId: produto.id!,
-        quantidade: 1,
-      );
-      _showSnackBar('${produto.nome} adicionado ao carrinho!');
-    } catch (e) {
-      _showSnackBar('Erro ao adicionar ${produto.nome}: $e');
-    }
-  }
-
-  String _formatarData(String data) {
-    try {
-      final date = DateTime.parse(data);
-      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-    } catch (e) {
-      return data;
-    }
   }
 }

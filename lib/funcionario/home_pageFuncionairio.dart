@@ -6,6 +6,7 @@ import 'package:unilanches/funcionario/cadastro_funcionario.dart';
 import 'package:unilanches/funcionario/cadastro_produto.dart';
 import 'package:unilanches/funcionario/list_prod.dart';
 import 'package:unilanches/funcionario/vendas.dart';
+import 'package:unilanches/funcionario/confirma_pedido.dart';
 
 class HomePageFuncionario extends StatefulWidget {
   final String nome;
@@ -151,6 +152,18 @@ class _HomePageFuncionarioState extends State<HomePageFuncionario> {
               },
               icon: Icons.point_of_sale,
               label: 'Vendas',
+            ),
+            _buildGridButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ConfirmaPedido(),
+                  ),
+                );
+              },
+              icon: Icons.check,
+              label: 'Confirmar Pedido',
             ),
           ],
         ),
