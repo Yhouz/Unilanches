@@ -24,7 +24,8 @@ class _CadastroCardapioAprimoradoPageState
   DateTime? _dataSelecionada;
 
   List<ProdutoModel> _produtos = [];
-  List<int> produtosSelecionados = [];
+  List<int> produtosSelecionados =
+      []; // Esta lista armazena APENAS os IDs dos produtos selecionados
   Uint8List? _imagemCardapio;
   String? _nomeImagemCardapio;
   bool _carregando = true;
@@ -45,13 +46,13 @@ class _CadastroCardapioAprimoradoPageState
       print("Verificando IDs dos produtos carregados:");
       Set<int?> uniqueIds = {};
       for (var produto in produtosApi) {
-        print("  Produto: ${produto.nome} (ID: ${produto.id})");
+        print("   Produto: ${produto.nome} (ID: ${produto.id})");
         if (produto.id != null) {
           if (!uniqueIds.add(produto.id!)) {
-            print("  *** ALERTA: ID DUPLICADO ENCONTRADO: ${produto.id} ***");
+            print("   *** ALERTA: ID DUPLICADO ENCONTRADO: ${produto.id} ***");
           }
         } else {
-          print("  *** ALERTA: PRODUTO COM ID NULO: ${produto.nome} ***");
+          print("   *** ALERTA: PRODUTO COM ID NULO: ${produto.nome} ***");
         }
       }
       print(
@@ -63,7 +64,12 @@ class _CadastroCardapioAprimoradoPageState
         _carregando = false;
       });
     } catch (e) {
-      // ...
+      // Adicione um log de erro mais robusto aqui
+      print("Erro ao carregar produtos: $e");
+      setState(() {
+        _carregando = false;
+        _mostrarErro('Erro ao carregar produtos. Tente novamente.');
+      });
     }
   }
 
@@ -126,7 +132,7 @@ class _CadastroCardapioAprimoradoPageState
         nome: _nomeController.text.trim(),
         categoria: _categoriaController.text.trim(),
         data: _dataSelecionada!.toIso8601String().split('T').first,
-        produtos: produtosSelecionados,
+        produtos: produtosSelecionados, // Enviando a lista de IDs
       );
 
       final apiService = CardapioApiService();
@@ -140,7 +146,24 @@ class _CadastroCardapioAprimoradoPageState
         _mostrarSucesso('Cardápio salvo com sucesso!');
         _limparFormulario();
       } else {
-        _mostrarErro('Erro ao salvar cardápio: ${response.statusCode}');
+        // Tentar obter mais detalhes do erro do backend
+        String errorMessage = 'Erro ao salvar cardápio: ${response.statusCode}';
+        if (response.body.isNotEmpty) {
+          try {
+            // Supondo que o corpo da resposta de erro seja um JSON
+            // Você pode precisar importar 'dart:convert'
+            // final errorBody = json.decode(response.body);
+            // if (errorBody.containsKey('message')) {
+            //   errorMessage = 'Erro ao salvar cardápio: ${errorBody['message']}';
+            // }
+            print(
+              "Resposta de erro do servidor: ${response.body}",
+            ); // Para depuração
+          } catch (e) {
+            print("Erro ao decodificar corpo da resposta de erro: $e");
+          }
+        }
+        _mostrarErro(errorMessage);
       }
     } catch (e) {
       _mostrarErro('Erro ao salvar cardápio: $e');
@@ -550,5 +573,5 @@ class _CadastroCardapioAprimoradoPageState
 }
 
 extension on ProdutoModel {
-  get imagemUrl => null;
+  get imagemUrl => null; // Este é um getter temporário, que pode ser aprimorado
 }

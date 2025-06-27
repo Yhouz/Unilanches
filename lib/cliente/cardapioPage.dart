@@ -64,13 +64,15 @@ class _CardapioClientePageState extends State<CardapioClientePage> {
       final cardapio = await apiService.buscarCardapioDoDia();
 
       if (cardapio != null) {
+        // ✅ ESTE É O PONTO CRÍTICO: CHAMA buscarProdutosDoCardapio
         final produtosCardapio = await apiService.buscarProdutosDoCardapio(
-          cardapio.produtos,
+          cardapio.produtos, // cardapio.produtos deve ser uma List<int> de IDs
         );
         if (mounted) {
           setState(() {
             cardapioAtual = cardapio;
-            produtosSelecionados = produtosCardapio;
+            produtosSelecionados =
+                produtosCardapio; // Esta lista deve conter APENAS os produtos do cardápio
           });
         }
       } else {

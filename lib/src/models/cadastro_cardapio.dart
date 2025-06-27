@@ -20,7 +20,7 @@ class CardapioModel {
     nome: json['nome'],
     categoria: json['categoria'],
     data: json['data'],
-    produtos: List<int>.from(json['produtos']),
+    produtos: List<int>.from(json['produtos'] as List),
     imagemUrl: json['imagem'],
   );
 

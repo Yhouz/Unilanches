@@ -15,26 +15,42 @@ class CardapioApiService {
   Future<CardapioModel?> buscarCardapioDoDia() async {
     try {
       final hoje = DateTime.now().toIso8601String().split('T').first;
+
+      // ✅ CORREÇÃO AQUI: Remova o '/cardapios/' duplicado
+      // A URL final deve ser '$baseUrl$hoje/dia/' ou usar Uri.resolve
       final response = await http.get(
         Uri.parse(
-          "$baseUrl?data=$hoje",
-        ),
+          '$baseUrl$hoje/dia/',
+        ), // Isso gerará: https://api-a35y.onrender.com/api/cardapios/2025-06-27/dia/
         headers: {'Content-Type': 'application/json'},
+      );
+
+      print('Chamando API de cardápios com URL: ${response.request?.url}');
+      print(
+        'Resposta do Cardápio (Status ${response.statusCode}): ${response.body}',
       );
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data is List && data.isNotEmpty) {
-          return CardapioModel.fromJson(data[0]);
-        } else if (data is Map &&
-            data['results'] is List &&
-            data['results'].isNotEmpty) {
-          return CardapioModel.fromJson(data['results'][0]);
+
+        if (data is Map<String, dynamic>) {
+          return CardapioModel.fromJson(data);
         }
+
+        print(
+          'DEBUG: Formato de resposta do cardápio inesperado: $data',
+        );
+        return null;
+      } else if (response.statusCode == 404) {
+        print('Nenhum cardápio encontrado para hoje: ${response.body}');
+        return null;
+      } else {
+        throw Exception(
+          'Erro ao buscar cardápio do dia: Status ${response.statusCode}, Body: ${response.body}',
+        );
       }
-      return null;
     } catch (e) {
-      throw Exception('Erro ao buscar cardápio: $e');
+      throw Exception('Erro de rede/comunicação ao buscar cardápio: $e');
     }
   }
 
@@ -72,15 +88,27 @@ class CardapioApiService {
   // --- FIM DO NOVO MÉTODO ---
 
   // Buscar produtos do cardápio (movido para usar produtosBaseUrl)
+
   Future<List<ProdutoModel>> buscarProdutosDoCardapio(
     List<int> produtoIds,
   ) async {
     try {
-      final idsString = produtoIds.join(',');
+      if (produtoIds.isEmpty) {
+        return []; // Retorna uma lista vazia se não houver IDs para buscar
+      }
+
+      final idsString = produtoIds.join(','); // Ex: "8,9"
+
+      // A CORREÇÃO ESTÁ AQUI: Incluindo '/listar/' na URL
+      // Agora a URL será: 'https://api-a35y.onrender.com/api/produtos/listar/?ids=8,9'
+      final uri = Uri.parse(
+        produtosBaseUrl,
+      ).resolve('listar/').replace(queryParameters: {'ids': idsString});
+
+      print('Chamando API de produtos com URL: $uri'); // Útil para depuração!
+
       final response = await http.get(
-        Uri.parse(
-          '$produtosBaseUrl?ids=$idsString',
-        ),
+        uri, // Usando a Uri construída corretamente
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -89,8 +117,18 @@ class CardapioApiService {
         return dados
             .map((json) => ProdutoModel.fromJson(json as Map<String, dynamic>))
             .toList();
+      } else if (response.statusCode == 400) {
+        final errorData = json.decode(response.body);
+        print("Erro do backend (400): ${errorData['message']}");
+        throw Exception('Erro de requisição: ${errorData['message']}');
+      } else if (response.statusCode == 404) {
+        print("Nenhum produto encontrado para os IDs fornecidos (404).");
+        return [];
+      } else {
+        throw Exception(
+          'Erro ao carregar produtos: Status ${response.statusCode}, Body: ${response.body}',
+        );
       }
-      throw Exception('Erro ao carregar produtos');
     } catch (e) {
       throw Exception('Erro ao buscar produtos: $e');
     }
