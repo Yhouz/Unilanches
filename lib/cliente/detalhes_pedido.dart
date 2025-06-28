@@ -1,9 +1,8 @@
-// lib/cliente/detalhes_pedido.dart
 import 'package:flutter/material.dart';
 import 'package:unilanches/src/models/pedido_models.dart';
 import 'package:unilanches/src/services/pedido_service.dart';
 import 'package:intl/intl.dart';
-import 'package:qr_flutter/qr_flutter.dart'; // ✅ 1. Importe a biblioteca
+import 'package:qr_flutter/qr_flutter.dart'; // Importe a biblioteca
 
 class DetalhesPedido extends StatefulWidget {
   final String pedidoid;
@@ -30,7 +29,7 @@ class _DetalhesPedidoState extends State<DetalhesPedido> {
     });
   }
 
-  /// ✅ 2. Função para mostrar o Dialog com o QR Code
+  /// Função para mostrar o Dialog com o QR Code
   void _mostrarQrCodeDialog(String qrData) {
     showDialog(
       context: context,
@@ -42,6 +41,7 @@ class _DetalhesPedidoState extends State<DetalhesPedido> {
           title: const Text(
             'QR Code para Finalização',
             textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
           ),
           content: SizedBox(
             width: 250,
@@ -62,10 +62,13 @@ class _DetalhesPedidoState extends State<DetalhesPedido> {
           ),
           actions: [
             TextButton(
-              child: const Text('Fechar'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).primaryColor,
+              ),
+              child: const Text('Fechar'),
             ),
           ],
         );
@@ -73,7 +76,7 @@ class _DetalhesPedidoState extends State<DetalhesPedido> {
     );
   }
 
-  // Mapeamento de status para cores e ícones (reutilize do ListaPedidos)
+  // Mapeamento de status para cores e ícones
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'pendente':
@@ -116,7 +119,11 @@ class _DetalhesPedidoState extends State<DetalhesPedido> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detalhes do Pedido'),
+        title: const Text(
+          'Detalhes do Pedido',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: FutureBuilder<PedidoModel>(
         future: _pedidoDetalhesFuture,
@@ -168,6 +175,10 @@ class _DetalhesPedidoState extends State<DetalhesPedido> {
             symbol: 'R\$',
           );
 
+          // Determine if the QR code should be active
+          final bool isPedidoEntregue =
+              pedido.status_pedido.toLowerCase() == 'entregue';
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -179,7 +190,7 @@ class _DetalhesPedidoState extends State<DetalhesPedido> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  margin: const EdgeInsets.only(bottom: 16),
+                  margin: const EdgeInsets.only(bottom: 20),
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
                     child: Column(
@@ -188,24 +199,29 @@ class _DetalhesPedidoState extends State<DetalhesPedido> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Pedido #${pedido.pedido_id}',
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.deepPurple,
+                            Expanded(
+                              child: Text(
+                                'Pedido #${pedido.pedido_id}',
+                                style: const TextStyle(
+                                  fontSize: 24, // Larger font size
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.deepPurple,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
+                                horizontal: 12,
+                                vertical: 8,
                               ),
                               decoration: BoxDecoration(
                                 color: _getStatusColor(
                                   pedido.status_pedido,
-                                ).withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(10),
+                                ).withOpacity(0.15), // Slightly less opacity
+                                borderRadius: BorderRadius.circular(
+                                  15,
+                                ), // More rounded
                               ),
                               child: Row(
                                 children: [
@@ -214,14 +230,14 @@ class _DetalhesPedidoState extends State<DetalhesPedido> {
                                     color: _getStatusColor(
                                       pedido.status_pedido,
                                     ),
-                                    size: 18,
+                                    size: 20, // Slightly larger icon
                                   ),
-                                  const SizedBox(width: 6),
+                                  const SizedBox(width: 8), // More spacing
                                   Text(
                                     pedido.status_pedido,
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 15,
+                                      fontSize: 16, // Slightly larger text
                                       color: _getStatusColor(
                                         pedido.status_pedido,
                                       ),
@@ -232,7 +248,11 @@ class _DetalhesPedidoState extends State<DetalhesPedido> {
                             ),
                           ],
                         ),
-                        const Divider(height: 25, thickness: 1.5),
+                        const Divider(
+                          height: 30,
+                          thickness: 1.5,
+                          color: Colors.grey,
+                        ), // Thicker divider
                         _buildDetailRow(
                           Icons.calendar_today,
                           'Data do Pedido:',
@@ -250,20 +270,27 @@ class _DetalhesPedidoState extends State<DetalhesPedido> {
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
 
                 // Seção de Itens do Pedido
                 Text(
                   'Itens do Pedido',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    // Changed to headlineMedium
                     fontWeight: FontWeight.bold,
                     color: Colors.blueGrey[800],
                   ),
                 ),
-                const Divider(height: 10, thickness: 1),
+                const Divider(
+                  height: 15,
+                  thickness: 1.5,
+                  color: Colors.grey,
+                ), // Consistent divider
                 pedido.itens.isEmpty
                     ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20.0),
+                      padding: EdgeInsets.symmetric(
+                        vertical: 30.0,
+                      ), // More padding
                       child: Center(
                         child: Text(
                           'Nenhum item encontrado para este pedido.',
@@ -278,13 +305,17 @@ class _DetalhesPedidoState extends State<DetalhesPedido> {
                       itemBuilder: (context, index) {
                         final item = pedido.itens[index];
                         return Card(
-                          elevation: 2,
-                          margin: const EdgeInsets.symmetric(vertical: 6.0),
+                          elevation: 3, // Slightly higher elevation
+                          margin: const EdgeInsets.symmetric(
+                            vertical: 8.0,
+                          ), // More vertical margin
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(
+                              12,
+                            ), // More rounded corners
                           ),
                           child: Padding(
-                            padding: const EdgeInsets.all(12.0),
+                            padding: const EdgeInsets.all(16.0), // More padding
                             child: Row(
                               children: [
                                 Expanded(
@@ -296,22 +327,24 @@ class _DetalhesPedidoState extends State<DetalhesPedido> {
                                         item.produto.nome,
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 16,
+                                          fontSize: 18, // Larger font size
+                                          color: Colors.black87,
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 6), // More spacing
                                       Text(
                                         '${item.quantidade} x ${currencyFormat.format(item.valorItem)}',
                                         style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey[700],
+                                          fontSize: 15, // Slightly larger
+                                          color: Colors.grey[600],
                                         ),
                                       ),
+                                      const SizedBox(height: 6),
                                       Text(
                                         'Subtotal: ${currencyFormat.format(item.quantidade * item.valorItem)}',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 15,
+                                          fontSize: 16, // Slightly larger
                                           color: Colors.blueAccent,
                                         ),
                                       ),
@@ -324,28 +357,53 @@ class _DetalhesPedidoState extends State<DetalhesPedido> {
                         );
                       },
                     ),
-                const SizedBox(height: 20),
-
-                // ✅ 3. Botão atualizado para chamar o dialog
+                const SizedBox(height: 30), // More space before the button
+                // Botão para ver o QR Code
                 Center(
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      // Usa o campo `qr_code_pedido` se existir, senão usa o `pedido_id`
-                      final qrData =
-                          pedido.qr_code_pedido ?? pedido.pedido_id.toString();
-                      _mostrarQrCodeDialog(qrData);
-                    },
-                    icon: const Icon(Icons.qr_code),
-                    label: const Text('Ver QR Code do Pedido'),
+                    // ✅ Lógica para desabilitar o botão se o pedido estiver 'Entregue'
+                    onPressed:
+                        isPedidoEntregue
+                            ? null // Botão desabilitado se o status for 'Entregue'
+                            : () {
+                              final qrData =
+                                  pedido.qr_code_pedido ??
+                                  pedido.pedido_id
+                                      .toString(); // Usa qr_code_pedido se existir
+                              _mostrarQrCodeDialog(qrData);
+                            },
+                    icon: const Icon(Icons.qr_code, size: 24), // Larger icon
+                    label: Text(
+                      isPedidoEntregue
+                          ? 'QR Code Indisponível (Entregue)' // Texto quando desabilitado
+                          : 'Ver QR Code do Pedido',
+                      style: const TextStyle(
+                        fontSize: 18,
+                      ), // Consistent font size
+                    ),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 25,
-                        vertical: 15,
+                        horizontal: 30, // More horizontal padding
+                        vertical: 18, // More vertical padding
                       ),
-                      textStyle: const TextStyle(fontSize: 18),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
+                      // Define a cor de fundo com base no status (cinza se desabilitado)
+                      backgroundColor:
+                          isPedidoEntregue
+                              ? Colors.grey[400] // Lighter grey for disabled
+                              : Theme.of(
+                                context,
+                              ).primaryColor, // Primary color for enabled
+                      foregroundColor:
+                          isPedidoEntregue
+                              ? Colors.grey[700] // Darker text for disabled
+                              : Colors.white, // White text for enabled
+                      elevation:
+                          isPedidoEntregue
+                              ? 0
+                              : 5, // No elevation when disabled
                     ),
                   ),
                 ),
@@ -366,26 +424,34 @@ class _DetalhesPedidoState extends State<DetalhesPedido> {
     Color? valueColor,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(
+        vertical: 8.0,
+      ), // More vertical padding
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center, // Aligned to center
         children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
-          const SizedBox(width: 10),
+          Icon(
+            icon,
+            size: 22,
+            color: Colors.deepPurple,
+          ), // Larger icon and distinct color
+          const SizedBox(width: 12), // More spacing
           Text(
             label,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            style: const TextStyle(
+              fontSize: 17, // Slightly larger font
+              fontWeight: FontWeight.w600, // Medium bold
+              color: Colors.blueGrey,
+            ),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-                color: valueColor ?? Colors.black87,
-              ),
+          const Spacer(), // Use Spacer to push the value to the end
+          Text(
+            value,
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              fontSize: 17, // Consistent font size
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              color: valueColor ?? Colors.black87,
             ),
           ),
         ],

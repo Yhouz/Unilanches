@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:unilanches/Login_page.dart';
-import 'package:unilanches/funcionario/cadastrar_cardapio.dart';
 import 'package:unilanches/funcionario/cadastro_fornecedor.dart';
 import 'package:unilanches/funcionario/cadastro_funcionario.dart';
 import 'package:unilanches/funcionario/cadastro_produto.dart';
@@ -129,20 +128,7 @@ class _HomePageFuncionarioState extends State<HomePageFuncionario> {
               icon: Icons.list,
               label: 'Lista Produtos',
             ),
-            _buildGridButton(
-              onPressed: () {
-                // Assumindo que a classe se chama CadastroCardapioAprimoradoPage
-                // Se o nome for outro, ajuste aqui.
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CadastroCardapioAprimoradoPage(),
-                  ),
-                );
-              },
-              icon: Icons.menu_book,
-              label: 'Cadastrar Cardápio',
-            ),
+
             _buildGridButton(
               onPressed: () {
                 Navigator.push(

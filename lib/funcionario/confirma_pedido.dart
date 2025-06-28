@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:unilanches/src/models/pedido_models.dart'; // IMPORTANTE: Importe seu PedidoModel
+import 'package:unilanches/src/models/pedido_models.dart'; // Importe seu PedidoModel
 import 'package:unilanches/src/services/pedido_service.dart'; // Importe seu serviço de pedido
 
 class ConfirmaPedido extends StatefulWidget {
@@ -11,17 +11,56 @@ class ConfirmaPedido extends StatefulWidget {
 }
 
 class _ConfirmaPedidoState extends State<ConfirmaPedido> {
+  // IMPORTANT: Set autoStart to false to manually control camera start/stop
   final MobileScannerController controller = MobileScannerController(
     facing: CameraFacing.back,
+    autoStart: false, // <--- Key change here!
   );
 
-  // Instância do seu serviço de Pedidos
   final PedidoService _pedidoService = PedidoService();
 
   String? codigoLido;
-  bool isProcessing = false; // Trava o scanner após a primeira leitura
-  bool isLoading = false; // Controla a exibição do loading
-  String? errorMessage; // Armazena mensagens de erro da API
+  bool isProcessing = false;
+  bool isLoading = false;
+  String? mensagemExibicao;
+  Color corMensagemExibicao = Colors.white;
+
+  @override
+  void initState() {
+    super.initState();
+    mensagemExibicao = 'Aponte para o QR Code do pedido';
+    // Start the camera when the widget initializes
+    _startCamera();
+  }
+
+  // New method to handle camera start, especially useful after permissions or resets
+  Future<void> _startCamera() async {
+    // Only attempt to start if the controller is not already running
+    if (controller.isStarting != true) {
+      // Check if it's not already in a starting state
+      try {
+        await controller.start();
+        if (mounted) {
+          setState(() {
+            mensagemExibicao =
+                'Aponte para o QR Code do pedido'; // Reset message on successful camera start
+            corMensagemExibicao = Colors.white;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            mensagemExibicao =
+                'Erro ao iniciar câmera: ${e.toString().replaceAll('MobileScannerException: ', '')}';
+            corMensagemExibicao = Colors.red;
+            isLoading = false; // Ensure loading is off if camera fails
+          });
+          // You might want to delay before re-attempting or give a manual retry button
+          // if camera fails to start initially.
+        }
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -29,47 +68,100 @@ class _ConfirmaPedidoState extends State<ConfirmaPedido> {
     super.dispose();
   }
 
-  // Reinicia o estado para permitir uma nova leitura
-  void reiniciarScanner() {
+  /// Reinicia o estado para permitir uma nova leitura e reativa a câmera.
+  void reiniciarScanner() async {
+    // Made async because it calls _startCamera()
     if (mounted) {
       setState(() {
         codigoLido = null;
         isProcessing = false;
         isLoading = false;
-        errorMessage = null;
+        mensagemExibicao = 'Aponte para o QR Code do pedido';
+        corMensagemExibicao = Colors.white;
       });
+      // Stop current camera session if any, then start a new one
+      await controller.stop(); // Ensure it's stopped before starting again
+      _startCamera();
     }
   }
 
   /// Exibe o pop-up com os detalhes do pedido para confirmação.
   Future<void> _exibirPopupDeConfirmacao(
-    String pedidoId,
-    List<String> itensDoPedido,
+    PedidoModel pedido,
   ) async {
     return showDialog<void>(
       context: context,
-      barrierDismissible: false, // O usuário deve escolher uma ação
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Confirmar Entrega do Pedido'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: const Text(
+            'Confirmar Entrega do Pedido?',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
           content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
                 Text(
-                  'Pedido: $pedidoId',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  'Pedido ID: ${pedido.pedido_id}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.deepPurple,
+                  ),
+                ),
+                Text(
+                  'Valor Total: R\$${pedido.total.toStringAsFixed(2).replaceAll('.', ',')}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.green,
+                  ),
                 ),
                 const SizedBox(height: 16),
-                const Text('Itens do pedido:'),
+                const Text(
+                  'Itens do pedido:',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 8),
-                // Exibe a lista de itens formatada
-                ...itensDoPedido.map((item) => Text('• $item')),
+                if (pedido.itens.isEmpty)
+                  const Text(
+                    'Nenhum item listado.',
+                    style: TextStyle(
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey,
+                    ),
+                  )
+                else
+                  ...pedido.itens.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2.0),
+                      child: Text(
+                        '• ${item.quantidade}x ${item.produto.nome}',
+                        style: const TextStyle(fontSize: 15),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
+          actionsPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 10,
+          ),
           actions: <Widget>[
             TextButton(
-              child: const Text('Cancelar'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.redAccent,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 15,
+                  vertical: 10,
+                ),
+              ),
+              child: const Text('Cancelar', style: TextStyle(fontSize: 16)),
               onPressed: () {
                 Navigator.of(context).pop();
                 reiniciarScanner(); // Permite escanear novamente
@@ -78,14 +170,24 @@ class _ConfirmaPedidoState extends State<ConfirmaPedido> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF037FF3),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               child: const Text(
-                'Confirmar',
-                style: TextStyle(color: Colors.white),
+                'Confirmar Entrega',
+                style: TextStyle(fontSize: 16),
               ),
               onPressed: () {
                 Navigator.of(context).pop();
-                _finalizarPedidoConfirmado(pedidoId); // Chama a finalização
+                _finalizarPedidoConfirmado(
+                  pedido.pedido_id.toString(),
+                ); // Chama a finalização
               },
             ),
           ],
@@ -94,15 +196,19 @@ class _ConfirmaPedidoState extends State<ConfirmaPedido> {
     );
   }
 
-  /// **CORRIGIDO**: Função chamada quando um QR Code é detectado.
+  /// Lida com a detecção do QR Code e busca os detalhes do pedido.
   Future<void> _handleQrCodeDetection(String pedidoId) async {
     if (isProcessing) return;
+
+    // IMPORTANT: Stop the controller right after detection to prevent further scans
+    controller.stop();
 
     setState(() {
       isProcessing = true;
       isLoading = true;
-      errorMessage = null;
       codigoLido = pedidoId;
+      mensagemExibicao = 'Verificando pedido $pedidoId...';
+      corMensagemExibicao = Colors.yellow.shade700;
     });
 
     try {
@@ -110,21 +216,16 @@ class _ConfirmaPedidoState extends State<ConfirmaPedido> {
         pedidoId,
       );
 
-      // --- PONTO DA CORREÇÃO ---
-      // O erro acontecia porque estávamos tentando usar `pedido.carrinho.itens`.
-      // Como vimos no seu `PedidoModel`, `pedido.carrinho` é um `int` (ID),
-      // e a lista de itens está diretamente em `pedido.itens`.
-      //
-      // ✅ CORREÇÃO: Acessamos a lista de itens diretamente de `pedido.itens`.
-      final List<String> itensDoPedido =
-          pedido.itens.map((item) {
-            // Presumindo que seu ItemCarrinhoModel tenha os campos `quantidade`
-            // e um objeto `produto` com um campo `nome`.
-            final int quantidade = item.quantidade;
-            final String nomeProduto = item.produto.nome;
-            // ✅ CORREÇÃO DE SINTAXE: O 'x' foi movido para dentro da string.
-            return '${quantidade}x $nomeProduto'; // Formata como "2x Nome do Produto"
-          }).toList();
+      if (pedido.status_pedido.toLowerCase() == 'entregue') {
+        if (!mounted) return;
+        setState(() {
+          mensagemExibicao = 'Pedido $pedidoId já foi entregue!';
+          corMensagemExibicao = Colors.red;
+          isLoading = false;
+        });
+        Future.delayed(const Duration(seconds: 3), () => reiniciarScanner());
+        return;
+      }
 
       if (!mounted) return;
 
@@ -132,11 +233,13 @@ class _ConfirmaPedidoState extends State<ConfirmaPedido> {
         isLoading = false;
       });
 
-      await _exibirPopupDeConfirmacao(pedidoId, itensDoPedido);
+      await _exibirPopupDeConfirmacao(pedido);
     } catch (e) {
       if (mounted) {
         setState(() {
-          errorMessage = "Erro: ${e.toString().replaceAll('Exception: ', '')}";
+          mensagemExibicao =
+              "Erro: ${e.toString().replaceAll('Exception: ', '')}";
+          corMensagemExibicao = Colors.red;
           isLoading = false;
         });
         Future.delayed(const Duration(seconds: 3), () => reiniciarScanner());
@@ -148,40 +251,32 @@ class _ConfirmaPedidoState extends State<ConfirmaPedido> {
   Future<void> _finalizarPedidoConfirmado(String pedidoId) async {
     setState(() {
       isLoading = true;
-      errorMessage = null;
+      mensagemExibicao = 'Finalizando pedido $pedidoId...';
+      corMensagemExibicao = Theme.of(context).primaryColor;
     });
 
     try {
       await _pedidoService.finalizarPedido(pedidoId);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pedido finalizado com sucesso!'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Future.delayed(const Duration(seconds: 1), () {
+      setState(() {
+        mensagemExibicao = 'Pedido $pedidoId finalizado com sucesso!';
+        corMensagemExibicao = Colors.green;
+        isLoading = false;
+      });
+      Future.delayed(const Duration(seconds: 2), () {
         if (mounted) {
-          Navigator.of(context).pop();
+          reiniciarScanner();
         }
       });
     } catch (e) {
       if (mounted) {
         setState(() {
-          errorMessage = e.toString().replaceAll('Exception: ', '');
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage!),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
+          mensagemExibicao =
+              "Falha ao finalizar: ${e.toString().replaceAll('Exception: ', '')}";
+          corMensagemExibicao = Colors.red;
           isLoading = false;
         });
+        Future.delayed(const Duration(seconds: 3), () => reiniciarScanner());
       }
     }
   }
@@ -190,12 +285,15 @@ class _ConfirmaPedidoState extends State<ConfirmaPedido> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Confirmar Pedido'),
+        title: const Text(
+          'Confirmar Entrega',
+          style: TextStyle(color: Colors.white),
+        ),
         centerTitle: true,
         backgroundColor: const Color(0xFF037FF3),
         titleTextStyle: const TextStyle(
           color: Colors.white,
-          fontSize: 20,
+          fontSize: 22,
           fontWeight: FontWeight.bold,
         ),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -213,46 +311,101 @@ class _ConfirmaPedidoState extends State<ConfirmaPedido> {
               }
             },
           ),
+          // Scanner Overlay/Frame
           Container(
-            width: 260,
-            height: 260,
+            width: 280,
+            height: 280,
             decoration: BoxDecoration(
               border: Border.all(
-                color: Colors.white.withOpacity(0.7),
-                width: 6,
+                color: Colors.white.withOpacity(0.8),
+                width: 5,
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    child: _buildCornerLine(Alignment.topLeft),
+                  ),
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: _buildCornerLine(Alignment.topRight),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    child: _buildCornerLine(Alignment.bottomLeft),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: _buildCornerLine(Alignment.bottomRight),
+                  ),
+                ],
+              ),
             ),
           ),
+          // Bottom Information Panel
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 25),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(30),
+                  topRight: Radius.circular(30),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    spreadRadius: 2,
+                    blurRadius: 10,
+                    offset: const Offset(0, -3),
+                  ),
+                ],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    codigoLido != null
-                        ? 'Processando pedido: $codigoLido'
-                        : 'Aponte para o QR Code',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.qr_code_scanner,
+                        color: corMensagemExibicao,
+                        size: 24,
+                      ),
+                      const SizedBox(width: 10),
+                      Flexible(
+                        child: Text(
+                          mensagemExibicao!,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: corMensagemExibicao,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
                   ),
-                  if (errorMessage != null) ...[
-                    const SizedBox(height: 8),
+                  if (codigoLido != null &&
+                      !isLoading &&
+                      corMensagemExibicao != Colors.red) ...[
+                    const SizedBox(height: 10),
                     Text(
-                      errorMessage!,
-                      style: const TextStyle(color: Colors.red, fontSize: 14),
+                      'QR Code lido: $codigoLido',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -261,24 +414,48 @@ class _ConfirmaPedidoState extends State<ConfirmaPedido> {
                     onPressed: isLoading ? null : reiniciarScanner,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF037FF3),
                       side: const BorderSide(color: Color(0xFF037FF3)),
-                      minimumSize: const Size(double.infinity, 40),
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 2,
                     ),
                     child: const Text(
                       'Escanear Novamente',
-                      style: TextStyle(color: Color(0xFF037FF3)),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
           ),
+          // Full-screen Loading Overlay
           if (isLoading)
             Container(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withOpacity(0.6),
               child: const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      strokeWidth: 4,
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      'Processando...',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -286,4 +463,39 @@ class _ConfirmaPedidoState extends State<ConfirmaPedido> {
       ),
     );
   }
+
+  // Helper for the corner lines in the scanner frame
+  Widget _buildCornerLine(Alignment alignment) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        border: Border(
+          top:
+              alignment == Alignment.topLeft || alignment == Alignment.topRight
+                  ? BorderSide(color: Colors.blue.shade300, width: 4)
+                  : BorderSide.none,
+          bottom:
+              alignment == Alignment.bottomLeft ||
+                      alignment == Alignment.bottomRight
+                  ? BorderSide(color: Colors.blue.shade300, width: 4)
+                  : BorderSide.none,
+          left:
+              alignment == Alignment.topLeft ||
+                      alignment == Alignment.bottomLeft
+                  ? BorderSide(color: Colors.blue.shade300, width: 4)
+                  : BorderSide.none,
+          right:
+              alignment == Alignment.topRight ||
+                      alignment == Alignment.bottomRight
+                  ? BorderSide(color: Colors.blue.shade300, width: 4)
+                  : BorderSide.none,
+        ),
+      ),
+    );
+  }
+}
+
+extension on MobileScannerController {
+  get isStarting => null;
 }
